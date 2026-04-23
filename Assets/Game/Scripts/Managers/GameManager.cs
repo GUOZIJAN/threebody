@@ -6,10 +6,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public GameState state;
-    public int playerCount = 3;
     public int currentPlayerId;
-    public List<PlayerData> players = new List<PlayerData>();
-
+    public int playerCount = PlayerManager.Instance.playerCount;
     private void Awake()
     {
         Instance = this;
@@ -27,7 +25,7 @@ public class GameManager : MonoBehaviour
         EventManager.OnTurnEnd?.Invoke();
 
         //找到下一个存活玩家
-        while (!players[(currentPlayerId + 1) % playerCount].isAlive)
+        while (!PlayerManager.Instance.Players[(currentPlayerId + 1) % playerCount].isAlive)
         {
             currentPlayerId = (currentPlayerId + 1) % playerCount;
         }
@@ -37,10 +35,17 @@ public class GameManager : MonoBehaviour
 
     public void CheckStrike()
     {
-        
+        foreach(var strike in ActionManager.Instance.strikeList){
+            strike.remainSteps--;
+            if (strike.remainSteps == 0)
+            {
+                RunStrike(strike);
+                ActionManager.Instance.strikeList.Remove(strike);
+            }
+        }
     }
 
-    public void RunStrike()
+    public void RunStrike(StrikeInfo strike)
     {
         
     }
