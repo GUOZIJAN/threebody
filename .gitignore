@@ -1,0 +1,43 @@
+# Unity generated files
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/[Uu]ser[Ss]ettings/
+
+# 必须保留Assets里的.meta文件（注意顺序：先不忽略.meta，再排除Assets外的.meta）
+!*.meta
+!/[Aa]ssets/**/*.meta
+!/[Pp]rojectSettings/**/*.meta
+
+# IDE/编辑器相关文件
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# 其他无关文件
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.ipa
+*.exe
+*.dll
+*.log
+*.txt.meta
