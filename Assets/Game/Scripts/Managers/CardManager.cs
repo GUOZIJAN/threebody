@@ -30,7 +30,7 @@ public class CardManager : MonoBehaviour
             deck.Add(new BuildCard(CardType.Build,8,"量子幽灵",3,0,false,BuildEffect.None));
             deck.Add(new BuildCard(CardType.Build,6,"反物质引擎",0,2,false,BuildEffect.None));
             deck.Add(new BuildCard(CardType.Build,6,"戴森球",0,3,true,BuildEffect.None));
-            deck.Add(new StrikeCard(CardType.Strike,4,"科技锁死",1,StrikeEffect.DestroyHand));
+            deck.Add(new StrikeCard(CardType.Strike,4,"科技锁死",0,StrikeEffect.DestroyHand));
         }
         for(int i = 0; i < 9; i++)
         {

@@ -13,7 +13,7 @@ public class PlayerManager : MonoBehaviour
         Instance = this;
     }
 
-    public PlayerData getPlayer(int id)
+    public PlayerData GetPlayer(int id)
     {
         return Players[id];
     }
