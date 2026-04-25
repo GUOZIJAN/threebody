@@ -7,12 +7,11 @@ public class GalaxyManager : MonoBehaviour
 {
     public static GalaxyManager Instance;
     public List<Galaxy> galaxyList = new List<Galaxy>(5);
-    public List<List<int>> distance;
+    public List<List<int>> distance = new List<List<int>>();
 
     private void Awake()
     {
         Instance = this;
-        Init();
     }
 
     public Galaxy GetGalaxy(int id)

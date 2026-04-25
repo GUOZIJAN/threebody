@@ -17,40 +17,62 @@ public class GameManager : MonoBehaviour
     public PlayerManager players;
     public GalaxyManager galaxys;
     public ActionManager actions;
+    public CardManager cards;
     private void Awake()
     {
         Instance = this;
         players = PlayerManager.Instance;
         galaxys = GalaxyManager.Instance;
         actions = ActionManager.Instance;
+        cards = CardManager.Instance;
         playerCount = players.playerCount;
         remainPlayers = playerCount;
     }
 
     public void GameStart()
     {
+        galaxys.Init();
+        cards.InitDeck();
+        players.Init();
         state = GameState.Gaming;
         currentPlayerId = 0;
+        Debug.Log($"游戏开始！当前玩家：{currentPlayerId}");
         EventManager.OnTurnStart?.Invoke();
     }
 
     public void NextTurn()
     {
         EventManager.OnTurnEnd?.Invoke();
-
+        Debug.Log($"回合结束！当前玩家：{currentPlayerId}");
         //找到下一个存活玩家
         while (!players.Players[(currentPlayerId + 1) % playerCount].isAlive)
         {
             currentPlayerId = (currentPlayerId + 1) % playerCount;
         }
         currentPlayerId = (currentPlayerId + 1) % playerCount;
+        PlayerData currentPlayer = players.GetPlayer(currentPlayerId);
+        CheckStrike(currentPlayerId);
+        int produceTotal = 0;
+        foreach (var build in currentPlayer.buildCards)
+        {
+            // 戴森球/太阳能阵列需要恒星才能产能量
+            if (build.needSun && !galaxys.GetGalaxy(currentPlayer.galaxyId).haveSun)
+                continue;
+            produceTotal += build.produce;
+        }
+        currentPlayer.energy += produceTotal;
+        Debug.Log($"玩家{currentPlayerId}回合开始 抽卡1张 生产能量{produceTotal}，当前能量：{currentPlayer.energy}");
         EventManager.OnTurnStart?.Invoke();
+        Debug.Log($"新回合开始！当前玩家：{currentPlayerId}");
     }
 
-    public void CheckStrike()
+    public void CheckStrike(int nowPlayer)
     {
         foreach(var strike in ActionManager.Instance.strikeList){
-            strike.remainSteps--;
+            if (strike.attackerId == nowPlayer)
+            {
+                strike.remainSteps--;
+            }
             if (strike.remainSteps == 0)
             {
                 RunStrike(strike);
@@ -126,17 +148,13 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        if(actions.strikeList.Count == 0)
+        if (remainPlayers == 0)
         {
-            
-            if (remainPlayers == 1)
-            {
-                //单人胜利
-            }
-            else if (remainPlayers == 0)
-            {
-                //无人生还
-            }
+            //无人生还
+        }
+        if(actions.strikeList.Count == 0 && remainPlayers == 1)
+        {
+            //单人胜利
         }
     }
 }
