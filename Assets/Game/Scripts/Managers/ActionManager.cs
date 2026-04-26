@@ -18,6 +18,7 @@ public class ActionManager : MonoBehaviour
     {
         PlayerData player = PlayerManager.Instance.GetPlayer(playId);
         if (player.energy < card.cost)  return;
+        player.energy -= card.cost;
 
         switch (card.type)
         {
@@ -44,7 +45,6 @@ public class ActionManager : MonoBehaviour
 
     public void DoBroadcast(PlayerData player,BroadcastCard card)
     {
-        player.energy -= card.cost;
         // 记录广播的星系
         player.lastBroadcastGalaxy = player.galaxyId;
         // 处理广播效果
@@ -69,7 +69,7 @@ public class ActionManager : MonoBehaviour
     {
         if (card.effect == BuildEffect.Fly)
         {
-            FlyTo(player,chioceManager.chooseGalaxy());
+            FlyTo(player,choiceManager.chooseGalaxy());
         }
         player.buildCards.Add(card);
     }
@@ -93,9 +93,21 @@ public class ActionManager : MonoBehaviour
 
     public void FlyTo(PlayerData player,Galaxy galaxy)
     {
+        if(!galaxy.isAlive || galaxy.ownerPlayerId != -1)
+        {
+            Debug.Log("目标星系不可飞行！");
+            return;
+        } 
         player.galaxyId = galaxy.id;
         galaxy.ownerPlayerId = player.playerId;
         player.energy = 0;
         player.handCards.Clear();
+    }
+
+    public void DiscardBuildCard(PlayerData player, BuildCard card)
+    {
+        player.buildCards.Remove(card);
+        CardManager.Instance.discard.Add(card);
+        player.energy += card.cost / 2; //丢弃建筑卡返还一半能量
     }
 }

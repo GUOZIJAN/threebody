@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class ChioceManager
+public class ChoiceManager
 {
-    public static ChioceManager Instance;
+    public static ChoiceManager Instance;
     public Galaxy targetGalaxy;
     public bool isWaitingChoose = false;
 
