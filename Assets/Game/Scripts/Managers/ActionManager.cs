@@ -5,13 +5,13 @@ using UnityEngine;
 public class ActionManager : MonoBehaviour
 {
     public static ActionManager Instance;
-    public ChioceManager chioceManager;
+    public ChoiceManager choiceManager;
     public List<StrikeInfo> strikeList = new List<StrikeInfo>();
 
     private void Awake()
     {
         Instance = this;
-        chioceManager = ChioceManager.Instance;
+        choiceManager = ChoiceManager.Instance;
     }
 
     public void UseCard(int playId, Card card)
@@ -30,17 +30,39 @@ public class ActionManager : MonoBehaviour
                 break;
 
             case CardType.Strike :
-                DoStrike(player, (StrikeCard)card, chioceManager.chooseGalaxy());
+                DoStrike(player, (StrikeCard)card, choiceManager.chooseGalaxy());
                 break;
         }
 
         player.handCards.Remove(card);
-        CardManager.Instance.discard.Add(card);
+        // 广播卡已经在 DoBroadcast 中处理，不需要再添加到 discard 列表
+        if (card.type != CardType.Broadcast)
+        {
+            CardManager.Instance.discard.Add(card);
+        }
     }
 
     public void DoBroadcast(PlayerData player,BroadcastCard card)
     {
-        
+        player.energy -= card.cost;
+        // 记录广播的星系
+        player.lastBroadcastGalaxy = player.galaxyId;
+        // 处理广播效果
+        foreach (var otherPlayer in PlayerManager.Instance.Players)
+        {
+            if (otherPlayer.playerId != player.playerId && otherPlayer.isAlive)
+            {
+                int distance = GalaxyManager.Instance.GetDistance(player.galaxyId, otherPlayer.galaxyId);
+                if (distance <= card.distance)
+                {
+                    // 广播影响范围内的玩家
+                    // 这里可以添加具体的广播效果逻辑
+                    Debug.Log($"玩家{player.playerId}使用{card.cardname}广播，影响到玩家{otherPlayer.playerId}，距离：{distance}");
+                }
+            }
+        }
+        // 将广播卡移到已使用的广播卡列表
+        CardManager.Instance.broadcastUsed.Add(card);
     }
 
     public void DoBuild(PlayerData player,BuildCard card)

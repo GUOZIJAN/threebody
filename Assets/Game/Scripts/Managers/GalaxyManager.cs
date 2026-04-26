@@ -30,6 +30,7 @@ public class GalaxyManager : MonoBehaviour
         {
             temp = new Galaxy(){id = i};
             galaxyList.Add(temp);
+            distance.Add(new List<int>());
         }
         galaxyList[0].neighborIds.AddRange(new List<int>{2,3,4});
         galaxyList[1].neighborIds.AddRange(new List<int>{1,4,6});
