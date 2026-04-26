@@ -5,11 +5,13 @@ using UnityEngine;
 public class ActionManager : MonoBehaviour
 {
     public static ActionManager Instance;
+    public ChioceManager chioceManager;
     public List<StrikeInfo> strikeList = new List<StrikeInfo>();
 
     private void Awake()
     {
         Instance = this;
+        chioceManager = ChioceManager.Instance;
     }
 
     public void UseCard(int playId, Card card)
@@ -28,11 +30,12 @@ public class ActionManager : MonoBehaviour
                 break;
 
             case CardType.Strike :
-                DoStrike(player, (StrikeCard)card, ChooseTarget());
+                DoStrike(player, (StrikeCard)card, chioceManager.chooseGalaxy());
                 break;
         }
 
         player.handCards.Remove(card);
+        CardManager.Instance.discard.Add(card);
     }
 
     public void DoBroadcast(PlayerData player,BroadcastCard card)
@@ -42,16 +45,21 @@ public class ActionManager : MonoBehaviour
 
     public void DoBuild(PlayerData player,BuildCard card)
     {
+        if (card.effect == BuildEffect.Fly)
+        {
+            FlyTo(player,chioceManager.chooseGalaxy());
+        }
         player.buildCards.Add(card);
     }
 
-    public void DoStrike(PlayerData player,StrikeCard card,int galaxyId)
+    public void DoStrike(PlayerData player,StrikeCard card,Galaxy galaxy)
     {
-        int distance = GalaxyManager.Instance.GetDistance(player.galaxyId,galaxyId);
-        StrikeInfo newStrike = new StrikeInfo()
+        //计算距离
+        int distance = GalaxyManager.Instance.GetDistance(player.galaxyId,galaxy.id);
+        StrikeInfo newStrike = new StrikeInfo()  //构造strike
         {
             attackerId = player.playerId,
-            targetGalaxyId = galaxyId,
+            targetGalaxyId = galaxy.id,
             damage = card.damage,
             effect = card.effect,
             totalDistance = distance,
@@ -61,9 +69,11 @@ public class ActionManager : MonoBehaviour
         strikeList.Add(newStrike);
     }
 
-    public int ChooseTarget()
+    public void FlyTo(PlayerData player,Galaxy galaxy)
     {
-        //待开发
-        return 1;
+        player.galaxyId = galaxy.id;
+        galaxy.ownerPlayerId = player.playerId;
+        player.energy = 0;
+        player.handCards.Clear();
     }
 }

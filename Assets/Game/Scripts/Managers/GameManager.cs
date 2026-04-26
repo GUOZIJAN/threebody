@@ -108,6 +108,7 @@ public class GameManager : MonoBehaviour
             {
                 maxDenfense = math.max(maxDenfense,build.defense);
             }
+            //可以防御
             if (maxDenfense >= strike.damage)
             {
                 switch (strike.effect)
@@ -126,6 +127,7 @@ public class GameManager : MonoBehaviour
                         break;
                 }
             }
+            //不能防御
             else
             {
                 if(strike.effect==StrikeEffect.DestroySun || strike.effect == StrikeEffect.DestroySunAndBuild)
@@ -138,10 +140,13 @@ public class GameManager : MonoBehaviour
                     target.isAlive = false;
                 }
 
+                targetPlayer.isAlive = false;
                 //打击者获得能量
                 remainPlayers--;
                 players.GetPlayer(strike.attackerId).energy += remainPlayers * 3;
                 EventManager.OnPlayerEliminate?.Invoke(targetPlayer.playerId);
+
+                GameOver();
             }
         }
     }
@@ -151,10 +156,12 @@ public class GameManager : MonoBehaviour
         if (remainPlayers == 0)
         {
             //无人生还
+            Debug.Log("无人生还");
         }
         if(actions.strikeList.Count == 0 && remainPlayers == 1)
         {
             //单人胜利
+            Debug.Log("单人胜利");
         }
     }
 }
