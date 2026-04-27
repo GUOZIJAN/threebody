@@ -1,6 +1,6 @@
 using TMPro;
 using UnityEngine;
-
+using UnityEngine.UI;
 public class ResBroadcast : PopupBase<bool>
 {
     public Button YesButton;

@@ -7,6 +7,7 @@ public class ActionManager : MonoBehaviour
     public static ActionManager Instance;
     public ChoiceManager choiceManager;
     public List<StrikeInfo> strikeList = new List<StrikeInfo>();
+    public Dictionary<int, BroadcastCard> BroadcastRes = new Dictionary<int, BroadcastCard>();
 
     private void Awake()
     {
