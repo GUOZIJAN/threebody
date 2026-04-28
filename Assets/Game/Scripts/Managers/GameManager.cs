@@ -164,6 +164,29 @@ public class GameManager : MonoBehaviour
             Debug.Log("单人胜利");
         }
     }
+
+
+    public void CompleteBroadcast(BroadcastCard card1, BroadcastCard card2,PlayerData player1, PlayerData player2)
+    {
+        //根据玩家选择的响应结果，处理广播效果
+        if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Cooperate)
+        {
+            player1.energy += 3;
+            player2.energy += 3;
+        }
+        else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Fake)
+        {
+            //都不响应，无效果
+        }
+        else if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Fake)
+        {
+            player2.energy += 5;
+        }
+        else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Cooperate)
+        {
+            player1.energy += 5;
+        }
+    }
 }
 
     
