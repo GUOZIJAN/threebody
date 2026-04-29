@@ -18,6 +18,8 @@ public class GameManager : MonoBehaviour
     public GalaxyManager galaxys;
     public ActionManager actions;
     public CardManager cards;
+    public List<AI> ais;
+    public Player player;
     private void Awake()
     {
         Instance = this;

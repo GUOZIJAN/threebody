@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -44,26 +45,37 @@ public class ActionManager : MonoBehaviour
         }
     }
 
-    public void DoBroadcast(PlayerData player,BroadcastCard card)
+    async public void DoBroadcast(PlayerData player,BroadcastCard card)
     {
         // 记录广播的星系
         player.lastBroadcastGalaxy = player.galaxyId;
-        // 处理广播效果
-        foreach (var otherPlayer in PlayerManager.Instance.Players)
+        BroadcastCard response;
+        // 处理ai广播效果
+        foreach (var ai in GameManager.Instance.ais)
         {
-            if (otherPlayer.playerId != player.playerId && otherPlayer.isAlive)
+            if(ai.data.playerId != player.playerId && ai.data.isAlive)
             {
-                int distance = GalaxyManager.Instance.GetDistance(player.galaxyId, otherPlayer.galaxyId);
-                if (distance <= card.distance)
+                response = ai.Respond(player, GalaxyManager.Instance.GetGalaxy(player.galaxyId), card);
+                if (response != null)
                 {
-                    // 广播影响范围内的玩家
-                    // 这里可以添加具体的广播效果逻辑
-                    Debug.Log($"玩家{player.playerId}使用{card.cardname}广播，影响到玩家{otherPlayer.playerId}，距离：{distance}");
+                    BroadcastRes[ai.data.playerId] = response;
                 }
             }
         }
+        // 处理玩家广播效果,需要异步
+        response = await GameManager.Instance.player.Respond(player, GalaxyManager.Instance.GetGalaxy(player.galaxyId), card);
+        if (response != null)
+        {
+            BroadcastRes[GameManager.Instance.player.data.playerId] = response;
+        }
         // 将广播卡移到已使用的广播卡列表
         CardManager.Instance.broadcastUsed.Add(card);
+
+        if(BroadcastRes.Count == 0)
+        {
+            Debug.Log("没有玩家响应广播卡");
+        }
+        else response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
     }
 
     public void DoBuild(PlayerData player,BuildCard card)
