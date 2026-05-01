@@ -1,22 +1,40 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class ChoiceManager
+public class ChoiceManager : MonoBehaviour
 {
     public static ChoiceManager Instance;
-    public Galaxy targetGalaxy;
-    public bool isWaitingChoose = false;
+    private TaskCompletionSource<Galaxy> galaxyTcs;
 
     private void Awake()
     {
         Instance = this;
     }
 
-    public Galaxy chooseGalaxy()
+    public Task<Galaxy> ChooseGalaxy()
     {
-        while (isWaitingChoose)
+        galaxyTcs = new TaskCompletionSource<Galaxy>();
+        return galaxyTcs.Task;
+    }
+
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
         {
-            //空循环，等待mousedown给targetGalaxy赋值
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit))
+            {
+                Galaxy galaxy = hit.collider.GetComponent<Galaxy>();
+                if (galaxy != null)
+                {
+                    OnGalaxySelected(galaxy);
+                }
+            }
         }
-        return targetGalaxy;
+    }
+
+    public void OnGalaxySelected(Galaxy galaxy)
+    {
+        galaxyTcs?.SetResult(galaxy);
     }
 }

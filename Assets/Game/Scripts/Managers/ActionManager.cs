@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ public class ActionManager : MonoBehaviour
         choiceManager = ChoiceManager.Instance;
     }
 
-    public void UseCard(int playId, Card card)
+    public async void UseCard(int playId, Card card)
     {
         PlayerData player = PlayerManager.Instance.GetPlayer(playId);
         if (player.energy < card.cost)  return;
@@ -29,11 +30,12 @@ public class ActionManager : MonoBehaviour
                 break;
             
             case CardType.Build :
-                DoBuild(player, (BuildCard)card);
+                await DoBuild(player, (BuildCard)card);
                 break;
 
             case CardType.Strike :
-                DoStrike(player, (StrikeCard)card, choiceManager.chooseGalaxy());
+                Galaxy targetGalaxy = await ChoiceManager.Instance.ChooseGalaxy();
+                DoStrike(player, (StrikeCard)card, targetGalaxy);
                 break;
         }
 
@@ -78,11 +80,11 @@ public class ActionManager : MonoBehaviour
         else response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
     }
 
-    public void DoBuild(PlayerData player,BuildCard card)
+    public async Task DoBuild(PlayerData player,BuildCard card)
     {
         if (card.effect == BuildEffect.Fly)
         {
-            FlyTo(player,choiceManager.chooseGalaxy());
+            FlyTo(player,await ChoiceManager.Instance.ChooseGalaxy());
         }
         player.buildCards.Add(card);
     }
