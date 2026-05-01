@@ -52,6 +52,20 @@ public class ActionManager : MonoBehaviour
         // 记录广播的星系
         player.lastBroadcastGalaxy = player.galaxyId;
         BroadcastCard response;
+        PlayerData resonser;
+        //循环，直到玩家选择一个合法的星系作为广播目标
+        while(true)
+        {
+            Galaxy galaxy = await ChoiceManager.Instance.ChooseGalaxy();
+            if(GalaxyManager.Instance.GetDistance(player.galaxyId, galaxy.id) <= card.distance)
+            {
+                break;
+            }
+            else
+            {
+                Debug.Log("选择的星系超出广播范围，请重新选择！");
+            }
+        }
         // 处理ai广播效果
         foreach (var ai in GameManager.Instance.ais)
         {
@@ -76,8 +90,15 @@ public class ActionManager : MonoBehaviour
         if(BroadcastRes.Count == 0)
         {
             Debug.Log("没有玩家响应广播卡");
+            return;
         }
-        else response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
+        else
+        {
+            response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
+            resonser= PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
+        }
+        
+        GameManager.Instance.CompleteBroadcast(card, response, player, resonser);
     }
 
     public async Task DoBuild(PlayerData player,BuildCard card)
