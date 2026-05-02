@@ -1,10 +1,10 @@
-using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-class GalaxyOnClick : MonoBehaviour
+class GalaxyOnClick : MonoBehaviour, IPointerClickHandler
 {
     public int id;
-    private void OnMouseDown()
+    public void OnPointerClick(PointerEventData eventData)
     {
         ChoiceManager.Instance.OnGalaxySelected(GalaxyManager.Instance.GetGalaxy(id));
     }
