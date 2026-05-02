@@ -17,21 +17,6 @@ public class ChoiceManager : MonoBehaviour
         return galaxyTcs.Task;
     }
 
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                Galaxy galaxy = hit.collider.GetComponent<Galaxy>();
-                if (galaxy != null)
-                {
-                    OnGalaxySelected(galaxy);
-                }
-            }
-        }
-    }
 
     public void OnGalaxySelected(Galaxy galaxy)
     {
