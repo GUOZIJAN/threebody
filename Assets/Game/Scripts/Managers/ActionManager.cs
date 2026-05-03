@@ -85,20 +85,25 @@ public class ActionManager : MonoBehaviour
             BroadcastRes[GameManager.Instance.player.data.playerId] = response;
         }
         // 将广播卡移到已使用的广播卡列表
-        CardManager.Instance.broadcastUsed.Add(card);
-
+        
         if(BroadcastRes.Count == 0)
         {
+            CardManager.Instance.discard.Add(card);
+            player.energy += 1; //没有玩家响应广播卡返还1点能量
             Debug.Log("没有玩家响应广播卡");
             return;
         }
         else
         {
+            CardManager.Instance.broadcastUsed.Add(card);
             response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
             resonser= PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
+
+            GameManager.Instance.CompleteBroadcast(card, response, player, resonser);
+            resonser.handCards.Add(CardManager.Instance.Draw()); // 响应广播卡的玩家抽一张牌作为奖励
         }
         
-        GameManager.Instance.CompleteBroadcast(card, response, player, resonser);
+        
     }
 
     public async Task DoBuild(PlayerData player,BuildCard card)
