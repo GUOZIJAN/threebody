@@ -44,6 +44,11 @@ public class GameManager : MonoBehaviour
 
     public void NextTurn()
     {
+        PlayerData currentPlayer = players.GetPlayer(currentPlayerId);
+        while(currentPlayer.handCards.Count < 4)
+        {
+            currentPlayer.handCards.Add(cards.Draw());
+        }
         EventManager.OnTurnEnd?.Invoke();
         Debug.Log($"回合结束！当前玩家：{currentPlayerId}");
         //找到下一个存活玩家
@@ -52,7 +57,7 @@ public class GameManager : MonoBehaviour
             currentPlayerId = (currentPlayerId + 1) % playerCount;
         }
         currentPlayerId = (currentPlayerId + 1) % playerCount;
-        PlayerData currentPlayer = players.GetPlayer(currentPlayerId);
+        currentPlayer = players.GetPlayer(currentPlayerId);
         CheckStrike(currentPlayerId);
         int produceTotal = 0;
         foreach (var build in currentPlayer.buildCards)
