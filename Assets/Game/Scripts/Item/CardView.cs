@@ -1,7 +1,9 @@
 using UnityEngine;
 using DG.Tweening;
+using Unity.VisualScripting;
+using UnityEngine.EventSystems;
 
-public class CardView : MonoBehaviour
+public class CardView : MonoBehaviour, IPointerClickHandler
 {
     public Card card;
 
@@ -18,15 +20,13 @@ public class CardView : MonoBehaviour
         _rect = GetComponent<RectTransform>();
     }
 
-    /// <summary>
-    /// 从牌堆起点 弧线飞到手牌终点
-    /// </summary>
+
+    // 从牌堆起点 弧线飞到手牌终点
     public void FlyToHand(Vector2 startPos, Vector2 endPos)
     {
         _rect.anchoredPosition = startPos;
         _rect.localScale = Vector3.one * scaleStart;
 
-        // 改成 Vector3 就不报错了
         Vector3 midPos = new Vector3(
             (startPos.x + endPos.x) / 2f,
             Mathf.Max(startPos.y, endPos.y) + arcHeight,
@@ -44,5 +44,11 @@ public class CardView : MonoBehaviour
             });
 
         _rect.DOScale(scaleEnd, moveDuration).SetEase(Ease.OutBack);
+    }
+
+    //卡牌点击会向上移动并变为选中状态
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        _rect.DOAnchorPos(new Vector2(_rect.position.x, _rect.position.y+10), 0.6f);
     }
 }
