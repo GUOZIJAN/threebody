@@ -54,6 +54,8 @@ public class CardManager : MonoBehaviour
             deck.Add(new BuildCard(CardType.Build,10,"光速飞船",0,0,false,BuildEffect.Fly));
             deck.Add(new BuildCard(CardType.Build,2,"监听基地",0,0,false,BuildEffect.NoReply));
         } 
+
+        Debug.Log("牌堆初始化完成");
     }
 
     public void Shuffle(List<Card> list)

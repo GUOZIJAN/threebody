@@ -34,14 +34,14 @@ public class GameManager : MonoBehaviour
         cards = CardManager.Instance;
         playerCount = players.playerCount;
         remainPlayers = playerCount;
+        galaxys.Init();
+        cards.InitDeck();
+        players.Init();
         player.Init();
         foreach(var ai in ais)
         {
             ai.Init();
         }
-        galaxys.Init();
-        cards.InitDeck();
-        players.Init();
     }
 
     public void GameStart()
@@ -49,7 +49,6 @@ public class GameManager : MonoBehaviour
         state = GameState.Gaming;
         currentPlayerId = 0;
         Debug.Log($"游戏开始！当前玩家：{currentPlayerId}");
-        for(int i=0; i<4; i++) player.data.handCards.Add(cards.Draw());
         EventManager.OnTurnStart?.Invoke();
     }
 

@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
     public void Init()
     {
         data = PlayerManager.Instance.GetPlayer(0); // 默认玩家ID为0 
+        Debug.Log($"玩家初始化完成");
     }
 
     async public Task<BroadcastCard> Respond(PlayerData raiser,Galaxy galaxy,BroadcastCard card)

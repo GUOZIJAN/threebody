@@ -8,6 +8,8 @@ public class AI : MonoBehaviour
     public void Init()
     {
         data = PlayerManager.Instance.GetPlayer(id); // 默认玩家ID为0 
+
+        Debug.Log($"ai{id}初始化完成");
     }
 
     public BroadcastCard Respond(PlayerData raiser, Galaxy galaxy, BroadcastCard card)

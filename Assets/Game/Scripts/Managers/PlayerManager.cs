@@ -17,6 +17,7 @@ public class PlayerManager : MonoBehaviour
 
     public PlayerData GetPlayer(int id)
     {
+        Debug.Log(id);
         return Players[id];
     }
 
@@ -44,5 +45,6 @@ public class PlayerManager : MonoBehaviour
             GalaxyManager.Instance.GetGalaxy(newPlayer.galaxyId).ownerPlayerId = i;
         }
         
+        Debug.Log("玩家数据初始化完成");
     }
 }

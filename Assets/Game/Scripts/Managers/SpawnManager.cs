@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -36,10 +37,13 @@ public class SpawnManager : MonoBehaviour
             Transform handPoint = emptyHandPoints[0];
             emptyHandPoints.RemoveAt(0);
             GameObject newCard = Instantiate(cardPrefab, deckPos.position, deckPos.rotation);
+
+            newCard.AddComponent<CardView>();
+
             newCard.transform.Find("CostText").GetComponent<TextMeshProUGUI>().text = card.cost.ToString();
             newCard.transform.Find("NameText").GetComponent<TextMeshProUGUI>().text = card.cardname;
             //后续补充简介
-            newCard.transform.Find("DesText").GetComponent<TextMeshProUGUI>().text = card.cardname;
+            newCard.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = card.cardname;
             newCard.transform.Find("TypeText").GetComponent<TextMeshProUGUI>().text = card.type.ToString();
             TextMeshProUGUI t =  newCard.transform.Find("PowerText").GetComponent<TextMeshProUGUI>();
             //不同种类 power文本的含义不同

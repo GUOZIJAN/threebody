@@ -51,5 +51,7 @@ public class GalaxyManager : MonoBehaviour
         distance[6].AddRange(new List<int>{2,3,1,2,1,2,0,2,1});
         distance[7].AddRange(new List<int>{3,2,3,2,1,1,2,0,1});
         distance[8].AddRange(new List<int>{3,3,2,3,2,2,1,1,0});
+
+        Debug.Log("星系初始化完成");
     }
 }
