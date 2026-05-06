@@ -7,7 +7,7 @@ using System.Linq;
 public class PlayerManager : MonoBehaviour
 {
     public static PlayerManager Instance;
-    public int playerCount = 3;
+    public int playerCount = 4;
     public List<PlayerData> Players = new List<PlayerData>();
 
     private void Awake()

@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     public GameState state;
     public int currentPlayerId;
-    public int playerCount;
+    public int playerCount = 4;
     public int remainPlayers;
     public PlayerManager players;
     public GalaxyManager galaxys;
@@ -23,22 +23,33 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        state = GameState.Prepare;
+    }
+
+    private void Start()
+    {
         players = PlayerManager.Instance;
         galaxys = GalaxyManager.Instance;
         actions = ActionManager.Instance;
         cards = CardManager.Instance;
         playerCount = players.playerCount;
         remainPlayers = playerCount;
+        player.Init();
+        foreach(var ai in ais)
+        {
+            ai.Init();
+        }
+        galaxys.Init();
+        cards.InitDeck();
+        players.Init();
     }
 
     public void GameStart()
     {
-        galaxys.Init();
-        cards.InitDeck();
-        players.Init();
         state = GameState.Gaming;
         currentPlayerId = 0;
         Debug.Log($"游戏开始！当前玩家：{currentPlayerId}");
+        for(int i=0; i<4; i++) player.data.handCards.Add(cards.Draw());
         EventManager.OnTurnStart?.Invoke();
     }
 

@@ -77,6 +77,7 @@ public class CardManager : MonoBehaviour
         }
         Card c = deck[0];
         deck.RemoveAt(0);
+        EventManager.OnDrawCard?.Invoke(c);
         return c;
     }
 }

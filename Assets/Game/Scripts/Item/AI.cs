@@ -3,6 +3,12 @@ using UnityEngine;
 public class AI : MonoBehaviour
 {
     public PlayerData data;
+    public int id;
+
+    public void Init()
+    {
+        data = PlayerManager.Instance.GetPlayer(id); // 默认玩家ID为0 
+    }
 
     public BroadcastCard Respond(PlayerData raiser, Galaxy galaxy, BroadcastCard card)
     {

@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class Player
+public class Player : MonoBehaviour
 {
     public static Player Instance;
     public PlayerData data;
