@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     public GameState state;
     public int currentPlayerId;
+    public GameObject currentCard;
     public int playerCount = 4;
     public int remainPlayers;
     public PlayerManager players;

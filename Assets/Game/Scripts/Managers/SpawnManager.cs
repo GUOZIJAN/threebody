@@ -1,12 +1,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using DG.Tweening;
 using Unity.VisualScripting;
 
 public class SpawnManager : MonoBehaviour
 {
     public static SpawnManager Instance;
     public Transform deckPos;
+    public List<CardView> handCards;
     public List<Transform> handPoints;
     public List<Transform> emptyHandPoints;
     public GameObject cardPrefab;
@@ -19,6 +21,7 @@ public class SpawnManager : MonoBehaviour
     {
         Instance = this;
         emptyHandPoints = new List<Transform>(handPoints);
+        handCards = new List<CardView>();
     }
 
     private void OnEnable()
@@ -65,7 +68,9 @@ public class SpawnManager : MonoBehaviour
             newCard.transform.SetParent(HandCardPanel.transform, false);
             cardBackSprite = Resources.Load<Sprite>("pic/" + card.cardname);
             newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = cardBackSprite;
-            newCard.GetComponent<CardView>().FlyToHand(deckPos.position,handPoint.position);
+            CardView cardView = newCard.GetComponent<CardView>();
+            handCards.Add(cardView);
+            cardView.FlyToHand(deckPos.position,handPoint.position);
         }
     }
 }

@@ -50,6 +50,20 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     //卡牌点击会向上移动并变为选中状态
     public void OnPointerClick(PointerEventData eventData)
     {
-        _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);;
+        GameObject other = GameManager.Instance.currentCard;
+        if(other != gameObject)
+        {
+            if(other != null)
+            {
+                other.GetComponent<CardView>().MoveCardDown();
+            }
+            _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
+            GameManager.Instance.currentCard = gameObject;
+        }
+    }
+
+    public void MoveCardDown()
+    {
+        _rect.DOAnchorPosY(_rect.anchoredPosition.y - selectUpOffset, 0.2f);
     }
 }
