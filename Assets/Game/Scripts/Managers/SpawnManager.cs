@@ -11,6 +11,7 @@ public class SpawnManager : MonoBehaviour
     public List<Transform> emptyHandPoints;
     public GameObject cardPrefab;
     public GameObject buildPrefab;
+    public GameObject HandCardPanel;
 
     private Sprite cardBackSprite;
 
@@ -61,6 +62,7 @@ public class SpawnManager : MonoBehaviour
             }
 
             //通过卡牌名称 找到背景资源
+            newCard.transform.SetParent(HandCardPanel.transform, false);
             cardBackSprite = Resources.Load<Sprite>("pic/" + card.cardname);
             newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = cardBackSprite;
             newCard.GetComponent<CardView>().FlyToHand(deckPos.position,handPoint.position);
