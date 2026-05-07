@@ -13,7 +13,8 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     public float moveDuration = 0.6f;     // 移动时长
     public float arcHeight = 150f;        // 弧线高度
     public float scaleStart = 0.7f;       // 出生初始缩放
-    public float scaleEnd = 1f;           // 最终缩放
+    public float scaleEnd = 0.7f;           // 最终缩放
+    public float selectUpOffset = 20f;    // 选中时向上移动的距离
 
     private void Awake()
     {
@@ -49,6 +50,6 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     //卡牌点击会向上移动并变为选中状态
     public void OnPointerClick(PointerEventData eventData)
     {
-        _rect.DOAnchorPos(new Vector2(_rect.position.x, _rect.position.y+10), 0.6f);
+        _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);;
     }
 }
