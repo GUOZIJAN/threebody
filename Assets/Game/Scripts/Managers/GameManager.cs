@@ -39,10 +39,13 @@ public class GameManager : MonoBehaviour
         cards.InitDeck();
         players.Init();
         player.Init();
+        UIManager.Instance.Init();
         foreach(var ai in ais)
         {
             ai.Init();
         }
+
+        GameStart();
     }
 
     public void GameStart()
@@ -62,6 +65,7 @@ public class GameManager : MonoBehaviour
         }
         EventManager.OnTurnEnd?.Invoke();
         Debug.Log($"回合结束！当前玩家：{currentPlayerId}");
+        
         //找到下一个存活玩家
         while (!players.Players[(currentPlayerId + 1) % playerCount].isAlive)
         {
@@ -69,7 +73,10 @@ public class GameManager : MonoBehaviour
         }
         currentPlayerId = (currentPlayerId + 1) % playerCount;
         currentPlayer = players.GetPlayer(currentPlayerId);
+        
+        //检查打击是否生效
         CheckStrike(currentPlayerId);
+
         int produceTotal = 0;
         foreach (var build in currentPlayer.buildCards)
         {

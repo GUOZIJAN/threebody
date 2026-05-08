@@ -19,7 +19,6 @@ public class ActionManager : MonoBehaviour
     private void Start()
     {
         choiceManager = ChoiceManager.Instance;
-    
     }
 
     public async void UseCard(int playId, Card card)

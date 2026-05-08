@@ -55,6 +55,7 @@ public class CardManager : MonoBehaviour
             deck.Add(new BuildCard(CardType.Build,2,"监听基地",0,0,false,BuildEffect.NoReply));
         } 
 
+        Shuffle(deck);
         Debug.Log("牌堆初始化完成");
     }
 
