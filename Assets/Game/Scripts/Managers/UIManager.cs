@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
@@ -31,14 +32,14 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void OnUseCardButtonClicked()
+    public async void OnUseCardButtonClicked()
     {
         if(gameManager.currentCard == null)
         {
             Debug.Log("没有选中卡牌！");
             return;
         }
-        ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
+        await ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
         Debug.Log("使用卡牌按钮被点击了！");
     }
 }

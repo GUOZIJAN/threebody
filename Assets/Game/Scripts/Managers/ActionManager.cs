@@ -21,7 +21,7 @@ public class ActionManager : MonoBehaviour
         choiceManager = ChoiceManager.Instance;
     }
 
-    public async void UseCard(int playId, Card card)
+    public async Task UseCard(int playId, Card card)
     {
         PlayerData player = PlayerManager.Instance.GetPlayer(playId);
         if (player.energy < card.cost)  return;
@@ -30,7 +30,7 @@ public class ActionManager : MonoBehaviour
         switch (card.type)
         {
             case CardType.Broadcast :
-                DoBroadcast(player, (BroadcastCard)card);
+                await DoBroadcast(player, (BroadcastCard)card);
                 break;
             
             case CardType.Build :
@@ -51,7 +51,7 @@ public class ActionManager : MonoBehaviour
         }
     }
 
-    async public void DoBroadcast(PlayerData player,BroadcastCard card)
+    async public Task DoBroadcast(PlayerData player,BroadcastCard card)
     {
         // 记录广播的星系
         player.lastBroadcastGalaxy = player.galaxyId;
