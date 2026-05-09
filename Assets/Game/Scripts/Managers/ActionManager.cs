@@ -62,15 +62,16 @@ public class ActionManager : MonoBehaviour
         player.lastBroadcastGalaxy = player.galaxyId;
         BroadcastCard response;
         PlayerData resonser;
+        Galaxy targetGalaxy;
         //循环，直到玩家选择一个合法的星系作为广播目标
 
         Debug.Log($"玩家{player.playerId}使用了广播卡{card.cardname}，正在选择广播目标星系...");
         while(true)
         {
-            Galaxy galaxy = await ChoiceManager.Instance.ChooseGalaxy();
-            if(GalaxyManager.Instance.GetDistance(player.galaxyId, galaxy.id) <= card.distance)
+            targetGalaxy = await ChoiceManager.Instance.ChooseGalaxy();
+            if(GalaxyManager.Instance.GetDistance(player.galaxyId, targetGalaxy.id) <= card.distance)
             {
-                Debug.Log($"玩家{player.playerId}选择了星系{galaxy.id}作为广播目标");
+                Debug.Log($"玩家{player.playerId}选择了星系{targetGalaxy.id}作为广播目标");
                 break;
             }
             else
@@ -83,7 +84,7 @@ public class ActionManager : MonoBehaviour
         {
             if(ai.data.playerId != player.playerId && ai.data.isAlive)
             {
-                response = ai.Respond(player, GalaxyManager.Instance.GetGalaxy(player.galaxyId), card);
+                response = ai.Respond(player, targetGalaxy, card);
                 if (response != null)
                 {
                     BroadcastRes[ai.data.playerId] = response;
@@ -91,7 +92,7 @@ public class ActionManager : MonoBehaviour
             }
         }
         // 处理玩家广播效果,需要异步
-        response = await GameManager.Instance.player.Respond(player, GalaxyManager.Instance.GetGalaxy(player.galaxyId), card);
+        response = await GameManager.Instance.player.Respond(player, targetGalaxy, card);
         if (response != null)
         {
             BroadcastRes[GameManager.Instance.player.data.playerId] = response;
