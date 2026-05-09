@@ -198,18 +198,22 @@ public class GameManager : MonoBehaviour
         {
             player1.energy += 3;
             player2.energy += 3;
+            Debug.Log($"玩家{player1.playerId}和玩家{player2.playerId} 双方获得3点能量");
         }
         else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Fake)
         {
             //都不响应，无效果
+            Debug.Log($"玩家{player1.playerId}和玩家{player2.playerId} 双方都选择欺骗，无效果");
         }
         else if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Fake)
         {
             player2.energy += 5;
+            Debug.Log($"玩家{player2.playerId}欺骗成功获得5点能量");
         }
         else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Cooperate)
         {
             player1.energy += 5;
+            Debug.Log($"玩家{player1.playerId}欺骗成功获得5点能量");
         }
     }
 }
