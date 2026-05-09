@@ -8,7 +8,7 @@ public class PlayerManager : MonoBehaviour
 {
     public static PlayerManager Instance;
     public int playerCount = 4;
-    public List<PlayerData> Players = new List<PlayerData>();
+    public List<PlayerData> Players;
 
     private void Awake()
     {
@@ -23,6 +23,7 @@ public class PlayerManager : MonoBehaviour
 
     public void Init()
     {
+        Players = new List<PlayerData>();
         //随机星系序列
         List<int> list = new List<int> { 1,2,3,4,5,6,7,8,9 };
         System.Random rnd = new System.Random();

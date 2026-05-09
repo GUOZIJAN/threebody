@@ -24,7 +24,12 @@ public class ActionManager : MonoBehaviour
     public async Task UseCard(int playId, Card card)
     {
         PlayerData player = PlayerManager.Instance.GetPlayer(playId);
-        if (player.energy < card.cost)  return;
+
+        if (player.energy < card.cost)
+        {
+            Debug.Log("能量不足，无法使用卡牌！");
+            return;
+        }  
         player.energy -= card.cost;
 
         switch (card.type)
@@ -58,11 +63,14 @@ public class ActionManager : MonoBehaviour
         BroadcastCard response;
         PlayerData resonser;
         //循环，直到玩家选择一个合法的星系作为广播目标
+
+        Debug.Log($"玩家{player.playerId}使用了广播卡{card.cardname}，正在选择广播目标星系...");
         while(true)
         {
             Galaxy galaxy = await ChoiceManager.Instance.ChooseGalaxy();
             if(GalaxyManager.Instance.GetDistance(player.galaxyId, galaxy.id) <= card.distance)
             {
+                Debug.Log($"玩家{player.playerId}选择了星系{galaxy.id}作为广播目标");
                 break;
             }
             else

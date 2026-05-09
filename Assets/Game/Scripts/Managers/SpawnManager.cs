@@ -69,6 +69,7 @@ public class SpawnManager : MonoBehaviour
             cardBackSprite = Resources.Load<Sprite>("pic/" + card.cardname);
             newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = cardBackSprite;
             CardView cardView = newCard.GetComponent<CardView>();
+            cardView.card = card;
             handCards.Add(cardView);
             cardView.FlyToHand(deckPos.position,handPoint.position);
         }
