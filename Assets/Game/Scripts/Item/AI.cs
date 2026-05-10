@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class AI : MonoBehaviour
@@ -30,5 +31,37 @@ public class AI : MonoBehaviour
         }
         Debug.Log($"AI玩家{data.playerId}没有响应玩家{raiser.playerId}的广播卡{card.cardname}");
         return null;
+    }
+
+    public async Task TurnStart()
+    {
+        // AI的回合开始时可以执行一些自动操作
+        Debug.Log($"AI玩家{data.playerId}的回合开始");
+        // 这里可以添加AI的决策逻辑
+        //遍历手牌，碰到可用牌就使用，星系选择随机，但尽可能远离当前所在星系
+        foreach(var handCard in data.handCards)
+        {
+            if(handCard.type == CardType.Broadcast && data.energy >= handCard.cost)
+            {
+                BroadcastCard card = (BroadcastCard)handCard;
+                Galaxy targetGalaxy = null;
+                int maxDistance = -1;
+                foreach(var galaxy in GalaxyManager.Instance.galaxyList)
+                {
+                    int distance = GalaxyManager.Instance.GetDistance(data.galaxyId, galaxy.id);
+                    if(distance <= card.distance && distance > maxDistance)
+                    {
+                        maxDistance = distance;
+                        targetGalaxy = galaxy;
+                    }
+                }
+                if(targetGalaxy != null)
+                {
+                    await ActionManager.Instance.DoBroadcast(data, card);
+                    break; // 每回合只使用一张广播卡
+                }
+            }
+        }
+        
     }
 }

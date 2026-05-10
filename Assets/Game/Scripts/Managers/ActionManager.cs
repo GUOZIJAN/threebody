@@ -92,11 +92,15 @@ public class ActionManager : MonoBehaviour
             }
         }
         // 处理玩家广播效果,需要异步
-        response = await GameManager.Instance.player.Respond(player, targetGalaxy, card);
-        if (response != null)
+        if(player.playerId != 0)
         {
-            BroadcastRes[GameManager.Instance.player.data.playerId] = response;
+            response = await GameManager.Instance.player.Respond(player, targetGalaxy, card);
+            if (response != null)
+            {
+                BroadcastRes[GameManager.Instance.player.data.playerId] = response;
+            }
         }
+        
         // 将广播卡移到已使用的广播卡列表
         
         if(BroadcastRes.Count == 0)
