@@ -30,7 +30,7 @@ public class ChoiceManager : MonoBehaviour
         if(GameManager.Instance.currentPlayerId != 0)
         {
             OnGalaxySelected(AISelectedGalaxy);
-             Debug.Log($"AI选择了星系{AISelectedGalaxy.id}");
+            Debug.Log($"AI选择了星系{AISelectedGalaxy.id}");
         }
     }
 }

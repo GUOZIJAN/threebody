@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using Unity.Mathematics;
+using System.Threading.Tasks;
 
 public class GameManager : MonoBehaviour
 {
@@ -48,12 +49,31 @@ public class GameManager : MonoBehaviour
         GameStart();
     }
 
-    public void GameStart()
+    public async Task GameStart()
     {
         state = GameState.Gaming;
         currentPlayerId = 0;
         Debug.Log($"游戏开始！当前玩家：{currentPlayerId}");
         EventManager.OnTurnStart?.Invoke();
+
+        //游戏主循环
+        await CircleStart();
+    }
+
+    public async Task CircleStart()
+    {
+        while (true)
+        {
+            //如果当前玩家是AI，执行AI回合逻辑
+            if(currentPlayerId > 0)
+            {
+                await ais[currentPlayerId - 1].TurnStart();
+            }
+            //如果是玩家，break出去，等待回合结束重启circle
+            else break;
+
+            NextTurn();
+        }
     }
 
     public void NextTurn()

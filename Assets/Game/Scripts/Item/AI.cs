@@ -41,27 +41,45 @@ public class AI : MonoBehaviour
         //遍历手牌，碰到可用牌就使用，星系选择随机，但尽可能远离当前所在星系
         foreach(var handCard in data.handCards)
         {
-            if(handCard.type == CardType.Broadcast && data.energy >= handCard.cost)
+            if(data.energy >= handCard.cost)
             {
-                BroadcastCard card = (BroadcastCard)handCard;
-                Galaxy targetGalaxy = null;
-                int maxDistance = -1;
-                foreach(var galaxy in GalaxyManager.Instance.galaxyList)
+                if(handCard.type == CardType.Broadcast)
                 {
-                    int distance = GalaxyManager.Instance.GetDistance(data.galaxyId, galaxy.id);
-                    if(distance <= card.distance && distance > maxDistance)
+                    BroadcastCard card = (BroadcastCard)handCard;
+                    Galaxy targetGalaxy = null;
+                    int maxDistance = -1;
+                    foreach(var galaxy in GalaxyManager.Instance.galaxyList)
                     {
-                        maxDistance = distance;
-                        targetGalaxy = galaxy;
+                        int distance = GalaxyManager.Instance.GetDistance(data.galaxyId, galaxy.id);
+                        if(distance <= card.distance && distance > maxDistance)
+                        {
+                            maxDistance = distance;
+                            targetGalaxy = galaxy;
+                        }
+                    }
+                    ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
+                    if(targetGalaxy != null)
+                    {
+                        await ActionManager.Instance.UseCard(data.playerId, card);
                     }
                 }
-                if(targetGalaxy != null)
-                {
-                    await ActionManager.Instance.DoBroadcast(data, card);
-                    break; // 每回合只使用一张广播卡
-                }
+            }
+
+            else if (handCard.type == CardType.Strike)
+            {
+                StrikeCard card = (StrikeCard)handCard;
+                int GalaxyId = Random.Range(1,10); // 随机选择一个星系作为打击目标
+                Galaxy targetGalaxy = GalaxyManager.Instance.GetGalaxy(GalaxyId);
+                ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
+
+                await ActionManager.Instance.UseCard(data.playerId, card);
+            }
+
+            else if (handCard.type == CardType.Build)
+            {
+                BuildCard card = (BuildCard)handCard;
+                await ActionManager.Instance.UseCard(data.playerId, card);
             }
         }
-        
     }
 }

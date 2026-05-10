@@ -42,4 +42,10 @@ public class UIManager : MonoBehaviour
         await ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
         Debug.Log("使用卡牌按钮被点击了！");
     }
+
+    public async void OnEndTurnButtonClicked()
+    {
+        Debug.Log("结束回合按钮被点击了！");
+        GameManager.Instance.CircleStart();
+    }
 }
