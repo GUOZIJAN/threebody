@@ -6,6 +6,7 @@ public class ChoiceManager : MonoBehaviour
     public static ChoiceManager Instance;
     public Galaxy AISelectedGalaxy;
     private TaskCompletionSource<Galaxy> galaxyTcs;
+    private TaskCompletionSource<bool> PlayerTurnTcs;
 
     private void Awake()
     {
@@ -32,5 +33,18 @@ public class ChoiceManager : MonoBehaviour
             OnGalaxySelected(AISelectedGalaxy);
             Debug.Log($"AI选择了星系{AISelectedGalaxy.id}");
         }
+    }
+
+    //创建玩家回合开始任务
+    public Task<bool> PlayerTurnStart()
+    {
+        PlayerTurnTcs = new TaskCompletionSource<bool>();
+        return PlayerTurnTcs.Task;
+    }
+
+    //玩家回合结束时调用，完成任务
+    public void OnPlayerTurnEnd()
+    {
+        PlayerTurnTcs?.SetResult(true);
     }
 }

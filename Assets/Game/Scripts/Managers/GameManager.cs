@@ -45,36 +45,36 @@ public class GameManager : MonoBehaviour
         {
             ai.Init();
         }
-
-        GameStart();
     }
 
-    public async Task GameStart()
+    public void GameStart()
     {
         state = GameState.Gaming;
         currentPlayerId = 0;
+        players.HandCardInit();
         Debug.Log($"游戏开始！当前玩家：{currentPlayerId}");
         EventManager.OnTurnStart?.Invoke();
-
-        //游戏主循环
-        await CircleStart();
     }
 
-    public async Task CircleStart()
+    public async Task GameCircle()
     {
         while (true)
         {
-            //如果当前玩家是AI，执行AI回合逻辑
-            if(currentPlayerId > 0)
+            if(currentPlayerId == 0)
             {
-                await ais[currentPlayerId - 1].TurnStart();
+                //玩家回合
+                await ChoiceManager.Instance.PlayerTurnStart();
             }
-            //如果是玩家，break出去，等待回合结束重启circle
-            else break;
-
+            else
+            {
+                //AI回合
+                await ais[currentPlayerId-1].TurnStart();
+            }
             NextTurn();
         }
+        
     }
+
 
     public void NextTurn()
     {

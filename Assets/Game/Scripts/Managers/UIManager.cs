@@ -5,6 +5,7 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
     public GameObject UseCardButton;
+    public GameObject GameStartButton;
     private GameManager gameManager;
 
     private void Awake()
@@ -43,9 +44,16 @@ public class UIManager : MonoBehaviour
         Debug.Log("使用卡牌按钮被点击了！");
     }
 
-    public async void OnEndTurnButtonClicked()
+    public void OnEndTurnButtonClicked()
     {
         Debug.Log("结束回合按钮被点击了！");
-        GameManager.Instance.CircleStart();
+        ChoiceManager.Instance.OnPlayerTurnEnd();
+    }
+
+    public async void OnGameStartButtonClicked()
+    {
+        GameStartButton.SetActive(false);
+        GameManager.Instance.GameStart();
+        await GameManager.Instance.GameCircle();
     }
 }

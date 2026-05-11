@@ -37,15 +37,24 @@ public class PlayerManager : MonoBehaviour
                 galaxyId = list[i],
                 energy = 3,
             };
-            //初始四张手牌
-            for(int j = 0; j < 4; j++)
-            {
-                newPlayer.handCards.Add(CardManager.Instance.Draw());
-            }
             Players.Add(newPlayer);
             GalaxyManager.Instance.GetGalaxy(newPlayer.galaxyId).ownerPlayerId = i;
         }
         
         Debug.Log("玩家数据初始化完成");
+    }
+
+    //初始手牌，每人四张
+    public void HandCardInit()
+    {
+        //初始四张手牌
+        for(int i = 0; i < playerCount; i++)
+        {
+            for(int j = 0; j < 4; j++)
+            {
+                Players[i].handCards.Add(CardManager.Instance.Draw());
+            }
+        }
+        
     }
 }
