@@ -39,8 +39,9 @@ public class AI : MonoBehaviour
         Debug.Log($"AI玩家{data.playerId}的回合开始");
         // 这里可以添加AI的决策逻辑
         //遍历手牌，碰到可用牌就使用，星系选择随机，但尽可能远离当前所在星系
-        foreach(var handCard in data.handCards)
+        for(int i = data.handCards.Count - 1; i >= 0; i--)
         {
+            var handCard = data.handCards[i];
             if(data.energy >= handCard.cost)
             {
                 if(handCard.type == CardType.Broadcast)
