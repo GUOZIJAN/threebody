@@ -41,7 +41,9 @@ public class UIManager : MonoBehaviour
             return;
         }
         await ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
-        Debug.Log("使用卡牌按钮被点击了！");
+        gameManager.currentCard = null;     //使用完卡牌后,清空'当前卡牌'
+        Player.Instance.currentCard = null;    //同样清空Player的currentCard
+        Debug.Log("使用卡牌按钮被点击了！");  //不放在gamemanager，只有玩家使用这个变量
     }
 
     public void OnEndTurnButtonClicked()

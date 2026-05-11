@@ -59,6 +59,7 @@ public class CardView : MonoBehaviour, IPointerClickHandler
             }
             _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
             GameManager.Instance.currentCard = gameObject;
+            Player.Instance.currentCard = (BroadcastCard)gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
         }
     }
 

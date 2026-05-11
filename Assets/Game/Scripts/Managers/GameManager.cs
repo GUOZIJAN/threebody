@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     public GameState state;
     public int currentPlayerId;
-    public GameObject currentCard;
+    public GameObject currentCard;   //plyer还有一个currentCard，表示当前选中的卡的Card
     public int playerCount = 4;
     public int remainPlayers;
     public PlayerManager players;

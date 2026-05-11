@@ -6,7 +6,7 @@ public class Player : MonoBehaviour
     public static Player Instance;
     public PlayerData data;
     public ResBroadcast resBroadcast;
-    public BroadcastCard currentCard;
+    public Card currentCard;
 
     private void Awake()
     {  
@@ -29,7 +29,7 @@ public class Player : MonoBehaviour
             data.energy -= currentCard.cost;
             data.handCards.Remove(currentCard);
             Debug.Log($"玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
-            return currentCard;
+            return (BroadcastCard)currentCard;
         }
         return null;
     }
