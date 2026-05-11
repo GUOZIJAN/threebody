@@ -64,22 +64,22 @@ public class AI : MonoBehaviour
                         await ActionManager.Instance.UseCard(data.playerId, card);
                     }
                 }
-            }
 
-            else if (handCard.type == CardType.Strike)
-            {
-                StrikeCard card = (StrikeCard)handCard;
-                int GalaxyId = Random.Range(1,10); // 随机选择一个星系作为打击目标
-                Galaxy targetGalaxy = GalaxyManager.Instance.GetGalaxy(GalaxyId);
-                ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
+                else if (handCard.type == CardType.Strike)
+                {
+                    StrikeCard card = (StrikeCard)handCard;
+                    int GalaxyId = Random.Range(1,10); // 随机选择一个星系作为打击目标
+                    Galaxy targetGalaxy = GalaxyManager.Instance.GetGalaxy(GalaxyId);
+                    ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
 
-                await ActionManager.Instance.UseCard(data.playerId, card);
-            }
+                    await ActionManager.Instance.UseCard(data.playerId, card);
+                }
 
-            else if (handCard.type == CardType.Build)
-            {
-                BuildCard card = (BuildCard)handCard;
-                await ActionManager.Instance.UseCard(data.playerId, card);
+                else if (handCard.type == CardType.Build)
+                {
+                    BuildCard card = (BuildCard)handCard;
+                    await ActionManager.Instance.UseCard(data.playerId, card);
+                }
             }
         }
     }

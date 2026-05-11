@@ -63,6 +63,7 @@ public class ActionManager : MonoBehaviour
         BroadcastCard response;
         PlayerData resonser;
         Galaxy targetGalaxy;
+        BroadcastRes.Clear(); // 清空上一次广播的响应记录
         //循环，直到玩家选择一个合法的星系作为广播目标
 
         Debug.Log($"玩家{player.playerId}使用了广播卡{card.cardname}，正在选择广播目标星系...");
