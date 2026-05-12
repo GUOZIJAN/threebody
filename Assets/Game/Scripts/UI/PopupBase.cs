@@ -23,12 +23,12 @@ public class PopupBase<TResult> : MonoBehaviour
         
         // 通知外部：等待结束，返回结果
         _taskCompletionSource?.SetResult(result);
-        _taskCompletionSource = null;
+        //_taskCompletionSource = null;    //暂时未知原因
     }
 
     public virtual void Close()
     {
         gameObject.SetActive(false);
-        _taskCompletionSource = null;
+       //_taskCompletionSource = null;     //暂时未知原因 
     }
 }

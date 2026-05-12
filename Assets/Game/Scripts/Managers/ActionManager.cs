@@ -103,7 +103,7 @@ public class ActionManager : MonoBehaviour
         }
         
         // 将广播卡移到已使用的广播卡列表
-        
+        Debug.Log($"响应数量：{BroadcastRes.Count}");
         if(BroadcastRes.Count == 0)
         {
             CardManager.Instance.discard.Add(card);
