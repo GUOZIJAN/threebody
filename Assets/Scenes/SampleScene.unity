@@ -2908,6 +2908,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UseCardButton: {fileID: 982385543}
   GameStartButton: {fileID: 502120298}
+  EndTurnButton: {fileID: 807387273}
 --- !u!114 &1595962058
 MonoBehaviour:
   m_ObjectHideFlags: 0

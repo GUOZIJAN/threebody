@@ -97,7 +97,7 @@ public class GameManager : MonoBehaviour
         //检查打击是否生效
         CheckStrike(currentPlayerId);
 
-        int produceTotal = 0;
+        int produceTotal = 1;  //每回合基础产能1点
         foreach (var build in currentPlayer.buildCards)
         {
             // 戴森球/太阳能阵列需要恒星才能产能量

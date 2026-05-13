@@ -6,12 +6,14 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance;
     public GameObject UseCardButton;
     public GameObject GameStartButton;
+    public GameObject EndTurnButton;
     private GameManager gameManager;
 
     private void Awake()
     {
         Instance = this;
         EventManager.OnTurnStart += ShowUseCardButton;
+        EventManager.OnTurnStart += ShowEndTurnButton;
     }
 
     public void Init()
@@ -30,6 +32,20 @@ public class UIManager : MonoBehaviour
         {
             UseCardButton.SetActive(false);
             Debug.Log("隐藏使用卡牌按钮");
+        }
+    }
+
+    public void ShowEndTurnButton()
+    {
+        if(gameManager.currentPlayerId == 0)
+        {
+            EndTurnButton.SetActive(true);
+            Debug.Log("显示结束回合按钮");
+        }
+        else
+        {
+            EndTurnButton.SetActive(false);
+            Debug.Log("隐藏结束回合按钮");
         }
     }
 
