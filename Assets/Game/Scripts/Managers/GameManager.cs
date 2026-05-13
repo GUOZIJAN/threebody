@@ -113,7 +113,10 @@ public class GameManager : MonoBehaviour
 
     public void CheckStrike(int nowPlayer)
     {
-        foreach(var strike in ActionManager.Instance.strikeList){
+        //中途会发生修改
+        for (int i = ActionManager.Instance.strikeList.Count-1; i >= 0; i--)
+        {
+            StrikeInfo strike = ActionManager.Instance.strikeList[i];
             if (strike.attackerId == nowPlayer)
             {
                 strike.remainSteps--;
