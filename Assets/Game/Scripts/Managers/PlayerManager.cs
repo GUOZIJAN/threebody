@@ -17,7 +17,6 @@ public class PlayerManager : MonoBehaviour
 
     public PlayerData GetPlayer(int id)
     {
-        Debug.Log(id);
         return Players[id];
     }
 

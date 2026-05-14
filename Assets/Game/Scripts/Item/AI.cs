@@ -36,8 +36,6 @@ public class AI : MonoBehaviour
     public async Task TurnStart()
     {
         // AI的回合开始时可以执行一些自动操作
-        Debug.Log($"AI玩家{data.playerId}的回合开始");
-        // 这里可以添加AI的决策逻辑
         //遍历手牌，碰到可用牌就使用，星系选择随机，但尽可能远离当前所在星系
         for(int i = data.handCards.Count - 1; i >= 0; i--)
         {
