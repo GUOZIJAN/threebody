@@ -7,4 +7,5 @@ public static class EventManager
     public static Action<int> OnPlayerEliminate;
     public static Action OnGameWin;
     public static Action<Card> OnDrawCard;
+    public static Action<int,Card> OnPlayCard;
 }

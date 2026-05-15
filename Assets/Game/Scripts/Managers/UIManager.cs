@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
@@ -7,6 +8,8 @@ public class UIManager : MonoBehaviour
     public GameObject UseCardButton;
     public GameObject GameStartButton;
     public GameObject EndTurnButton;
+    public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
+
     private GameManager gameManager;
 
     private void Awake()
@@ -73,5 +76,11 @@ public class UIManager : MonoBehaviour
         GameStartButton.SetActive(false);
         GameManager.Instance.GameStart();
         await GameManager.Instance.GameCircle();
+    }
+
+    public void UpdatePlayerPanel(int playerId, Card card)
+    {
+        // 根据playerId更新对应的玩家面板UI
+        // 例如，更新玩家的能量、手牌等信息
     }
 }

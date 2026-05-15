@@ -21,9 +21,9 @@ public class ActionManager : MonoBehaviour
         choiceManager = ChoiceManager.Instance;
     }
 
-    public async Task UseCard(int playId, Card card)
+    public async Task UseCard(int playerId, Card card)
     {
-        PlayerData player = PlayerManager.Instance.GetPlayer(playId);
+        PlayerData player = PlayerManager.Instance.GetPlayer(playerId);
 
         if (player.energy < card.cost)
         {
@@ -54,6 +54,7 @@ public class ActionManager : MonoBehaviour
         {
             CardManager.Instance.discard.Add(card);
         }
+        EventManager.OnPlayCard?.Invoke(playerId, card);  //更新UI
     }
 
     async public Task DoBroadcast(PlayerData player,BroadcastCard card)
