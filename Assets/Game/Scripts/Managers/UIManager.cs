@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -8,6 +10,7 @@ public class UIManager : MonoBehaviour
     public GameObject UseCardButton;
     public GameObject GameStartButton;
     public GameObject EndTurnButton;
+    public GameObject ItemPrefab;
     public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
 
     private GameManager gameManager;
@@ -17,6 +20,9 @@ public class UIManager : MonoBehaviour
         Instance = this;
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
+        EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
+        EventManager.OnPlayCard += UpdateBasePanel;
+        EventManager.OnPlayCard += UpdateItemPanel;
     }
 
     public void Init()
@@ -78,9 +84,47 @@ public class UIManager : MonoBehaviour
         await GameManager.Instance.GameCircle();
     }
 
-    public void UpdatePlayerPanel(int playerId, Card card)
+    public void UpdateBasePanel(int playerId)
     {
         // 根据playerId更新对应的玩家面板UI
         // 例如，更新玩家的能量、手牌等信息
+        GameObject targetPanel = PlayerPanels[playerId];
+        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        Transform baseInfo = targetPanel.transform.Find("Base");
+        // 更新能量显示
+        baseInfo.Find("energy").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
+        // 更新手牌数量显示
+        baseInfo.Find("card").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
+    }
+
+    // Overload to match delegates with Card parameter (e.g., Action<int, Card>)
+    public void UpdateBasePanel(int playerId, Card card)
+    {
+        UpdateBasePanel(playerId);
+    }
+
+    public void UpdateItemPanel(int playerId,Card card)
+    {
+        GameObject targetPanel = PlayerPanels[playerId];
+        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        Transform itemPanel = null;
+        //不同类型卡牌改动不同信息
+        switch (card.type)
+        {
+            case CardType.Broadcast :
+                itemPanel = targetPanel.transform.Find("Broadcast_list");
+                break;
+
+            case CardType.Build :
+                itemPanel = targetPanel.transform.Find("Build_list");
+                break;
+
+            case CardType.Strike :
+                itemPanel = targetPanel.transform.Find("Strike_list");
+                break;
+        }
+        ScrollRect scrollRect = itemPanel.GetComponent<ScrollRect>();
+        GameObject item = Instantiate(ItemPrefab, scrollRect.content);
+        item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
     }
 }
