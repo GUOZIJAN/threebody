@@ -27,11 +27,13 @@ public class SpawnManager : MonoBehaviour
     private void OnEnable()
     {
         EventManager.OnDrawCard += SpawnCard;
+        EventManager.OnPlayCard += (playerId,card) => RemoveCardFromHand();
     }
 
     private void OnDisable()
     {
         EventManager.OnDrawCard -= SpawnCard;
+        EventManager.OnPlayCard -= (playerId,card) => RemoveCardFromHand();
     }
 
     public void SpawnCard(Card card)
@@ -65,13 +67,29 @@ public class SpawnManager : MonoBehaviour
             }
 
             //通过卡牌名称 找到背景资源
-            newCard.transform.SetParent(HandCardPanel.transform, false);
+            newCard.transform.SetParent(handPoint, false);
             cardBackSprite = Resources.Load<Sprite>("pic/" + card.cardname);
             newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = cardBackSprite;
             CardView cardView = newCard.GetComponent<CardView>();
             cardView.card = card;
             handCards.Add(cardView);
             cardView.FlyToHand(deckPos.position,handPoint.position);
+
+            emptyHandPoints.Remove(handPoint);
+        }
+    }
+
+    public void RemoveCardFromHand()
+    {
+        if(GameManager.Instance.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
+        GameObject card = GameManager.Instance.currentCard;
+        CardView cardView = card.GetComponent<CardView>();
+        if (handCards.Contains(cardView))
+        {
+            handCards.Remove(cardView);
+            // 将对应的手牌位置添加回空闲列表
+            emptyHandPoints.Add(card.transform.parent);
+            Destroy(card);
         }
     }
 }

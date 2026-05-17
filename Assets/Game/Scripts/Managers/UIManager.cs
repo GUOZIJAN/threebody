@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
     public GameObject GameStartButton;
     public GameObject EndTurnButton;
     public GameObject ItemPrefab;
+    public TextMeshProUGUI PlayerGalaxyText;   // 显示玩家所在星系的文本组件
     public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
 
     private GameManager gameManager;
@@ -28,6 +29,7 @@ public class UIManager : MonoBehaviour
     public void Init()
     {
         gameManager = GameManager.Instance;
+        PlayerGalaxyText.text = $"所在星系: {PlayerManager.Instance.GetPlayer(0).galaxyId}";
     }
 
     public void ShowUseCardButton()
