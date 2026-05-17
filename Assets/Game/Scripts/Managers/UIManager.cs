@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
     public GameObject GameStartButton;
     public GameObject EndTurnButton;
     public GameObject ItemPrefab;
+    public TextMeshProUGUI CardCountText;
     public TextMeshProUGUI PlayerGalaxyText;   // 显示玩家所在星系的文本组件
     public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
 
@@ -24,6 +25,8 @@ public class UIManager : MonoBehaviour
         EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
         EventManager.OnPlayCard += UpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
+        EventManager.OnPlayerEliminate += ChangePanelColor;
+        EventManager.OnDrawCard += (card) => UpdateCardCount();
     }
 
     public void Init()
@@ -128,5 +131,15 @@ public class UIManager : MonoBehaviour
         ScrollRect scrollRect = itemPanel.GetComponent<ScrollRect>();
         GameObject item = Instantiate(ItemPrefab, scrollRect.content);
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
+    }
+
+    public void ChangePanelColor(int playerId)
+    {
+        PlayerPanels[playerId].GetComponent<Image>().color = Color.red; // 设置为红色
+    }
+
+    public void UpdateCardCount()
+    {
+        CardCountText.text = $"{CardManager.Instance.deck.Count}"; // 更新牌堆剩余卡牌数量
     }
 }
