@@ -209,18 +209,29 @@ public class GameManager : MonoBehaviour
             if (isEliminated)
             {
                 HandleStrikeElimination(strike, targetPlayer);
+                GameOver();
             }
         }
     }
 
+    private bool IsLastPlayerWin()
+    {
+        return remainPlayers == 1 && actions.strikeList.Count == 0;
+    }
+
+    private bool IsNoPlayerWin()
+    {
+        return remainPlayers == 0;
+    }
+
     public void GameOver()
     {
-        if (remainPlayers == 0)
+        if (IsNoPlayerWin())
         {
             //无人生还
             Debug.Log("无人生还");
         }
-        if(actions.strikeList.Count == 0 && remainPlayers == 1)
+        if(IsLastPlayerWin())
         {
             //单人胜利
             Debug.Log("单人胜利");
