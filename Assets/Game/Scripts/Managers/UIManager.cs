@@ -140,10 +140,12 @@ public class UIManager : MonoBehaviour
         GameObject targetPanel = PlayerPanels[playerId];
         Transform strikePanel = targetPanel.transform.Find("Strike_list");
         ScrollRect scrollRect = strikePanel.GetComponent<ScrollRect>();
-        foreach (Transform child in strikePanel)
+
+        foreach (Transform child in scrollRect.content)
         {
             Destroy(child.gameObject);
         }
+        
         foreach (var strike in ActionManager.Instance.strikeList)
         {
             if (strike.attackerId == playerId)
