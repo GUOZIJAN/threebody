@@ -23,6 +23,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
         EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
+        EventManager.OnTurnStart += () => UpdateStrikePanel(gameManager.currentPlayerId);
         EventManager.OnPlayCard += UpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
         EventManager.OnPlayerEliminate += ChangePanelColor;
@@ -125,12 +126,34 @@ public class UIManager : MonoBehaviour
                 break;
 
             case CardType.Strike :
-                itemPanel = targetPanel.transform.Find("Strike_list");
-                break;
+                UpdateStrikePanel(playerId);
+                return;
         }
         ScrollRect scrollRect = itemPanel.GetComponent<ScrollRect>();
         GameObject item = Instantiate(ItemPrefab, scrollRect.content);
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
+    }
+
+    public void UpdateStrikePanel(int playerId)
+    {
+        //先清空面板，在根据strikelist重新生成
+        GameObject targetPanel = PlayerPanels[playerId];
+        Transform strikePanel = targetPanel.transform.Find("Strike_list");
+        ScrollRect scrollRect = strikePanel.GetComponent<ScrollRect>();
+        foreach (Transform child in strikePanel)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (var strike in ActionManager.Instance.strikeList)
+        {
+            if (strike.attackerId == playerId)
+            {
+                GameObject item = Instantiate(ItemPrefab, scrollRect.content);
+                item.GetComponent<TextMeshProUGUI>().text = strike.cardName;
+                item.transform.Find("target").GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
+                item.transform.Find("remain").GetComponent<TextMeshProUGUI>().text = strike.remainSteps.ToString();
+            }
+        }
     }
 
     public void ChangePanelColor(int playerId)

@@ -1,5 +1,6 @@
 public class StrikeInfo
 {
+    public string cardName;
     public int attackerId;
     public int targetGalaxyId;
     public int damage;

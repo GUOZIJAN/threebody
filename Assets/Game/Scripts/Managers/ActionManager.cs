@@ -140,6 +140,7 @@ public class ActionManager : MonoBehaviour
         int distance = GalaxyManager.Instance.GetDistance(player.galaxyId,galaxy.id);
         StrikeInfo newStrike = new StrikeInfo()  //构造strike
         {
+            cardName = card.cardname,
             attackerId = player.playerId,
             targetGalaxyId = galaxy.id,
             damage = card.damage,
