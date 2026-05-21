@@ -153,7 +153,7 @@ public class UIManager : MonoBehaviour
                 GameObject item = Instantiate(ItemPrefab, scrollRect.content);
                 item.GetComponent<TextMeshProUGUI>().text = strike.cardName;
                 item.transform.Find("target").GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
-                item.transform.Find("remain").GetComponent<TextMeshProUGUI>().text = strike.remainSteps.ToString();
+                item.transform.Find("remain").GetComponent<TextMeshProUGUI>().text = (strike.totalDistance - strike.remainSteps).ToString();
             }
         }
     }

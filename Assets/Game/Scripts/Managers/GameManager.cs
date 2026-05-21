@@ -136,8 +136,8 @@ public class GameManager : MonoBehaviour
         EndCurrentTurn(currentPlayer);
         DrawHandCardsForCurrentPlayer(currentPlayer);
         AdvanceToNextAlivePlayer();
-        ResolveTurnStartEffects(currentPlayer);
         CheckStrike(currentPlayerId);
+        ResolveTurnStartEffects(currentPlayer);
     }
 
     private void ApplyStrikeToGalaxy(StrikeInfo strike, Galaxy target)
