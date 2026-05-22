@@ -136,6 +136,7 @@ public class GameManager : MonoBehaviour
         EndCurrentTurn(currentPlayer);
         DrawHandCardsForCurrentPlayer(currentPlayer);
         AdvanceToNextAlivePlayer();
+        currentPlayer = players.GetPlayer(currentPlayerId);
         CheckStrike(currentPlayerId);
         ResolveTurnStartEffects(currentPlayer);
     }
