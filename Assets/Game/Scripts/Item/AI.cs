@@ -77,6 +77,10 @@ public class AI : MonoBehaviour
                 {
                     BuildCard card = (BuildCard)handCard;
                     await ActionManager.Instance.UseCard(data.playerId, card);
+                    if(card.effect == BuildEffect.Fly)
+                    {
+                        break; // 飞行器建造成功后不继续使用牌了
+                    }
                 }
                 
                 await Task.Delay(1000); // 每使用一张牌后等待1秒，模拟思考时间
