@@ -163,6 +163,7 @@ public class ActionManager : MonoBehaviour
         galaxy.ownerPlayerId = player.playerId;
         player.energy = 0;
         player.handCards.Clear();
+        EventManager.OnFly?.Invoke(player, galaxy); //通知UI更新
     }
 
     public void DiscardBuildCard(PlayerData player, BuildCard card)

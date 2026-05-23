@@ -28,6 +28,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnPlayCard += UpdateItemPanel;
         EventManager.OnPlayerEliminate += ChangePanelColor;
         EventManager.OnDrawCard += (card) => UpdateCardCount();
+        EventManager.OnFly += UpdateAfterFly;
     }
 
     public void Init()
@@ -166,5 +167,16 @@ public class UIManager : MonoBehaviour
     public void UpdateCardCount()
     {
         CardCountText.text = $"{CardManager.Instance.deck.Count}"; // 更新牌堆剩余卡牌数量
+    }
+
+    public void UpdateAfterFly(PlayerData player,Galaxy targetGalaxy)
+    {
+        Transform playerBasePanel = PlayerPanels[player.playerId].transform.Find("Base");
+        playerBasePanel.Find("energy").GetComponent<TextMeshProUGUI>().text = "0";
+        playerBasePanel.Find("card").GetComponent<TextMeshProUGUI>().text = "0";
+        if(player.playerId == 0)
+        {
+            PlayerGalaxyText.text = $"所在星系: {targetGalaxy.id}";   //玩家需额外更新星系
+        }
     }
 }
