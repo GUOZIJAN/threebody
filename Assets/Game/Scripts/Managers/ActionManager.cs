@@ -62,7 +62,7 @@ public class ActionManager : MonoBehaviour
         // 记录广播的星系
         player.lastBroadcastGalaxy = player.galaxyId;
         BroadcastCard response;
-        PlayerData resonser;
+        PlayerData responser;
         Galaxy targetGalaxy;
         BroadcastRes.Clear(); // 清空上一次广播的响应记录
         //循环，直到玩家选择一个合法的星系作为广播目标
@@ -116,10 +116,17 @@ public class ActionManager : MonoBehaviour
         {
             CardManager.Instance.broadcastUsed.Add(card);
             response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
-            resonser= PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
+            responser = PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
 
-            GameManager.Instance.CompleteBroadcast(card, response, player, resonser);
-            resonser.handCards.Add(CardManager.Instance.Draw()); // 响应广播卡的玩家抽一张牌作为奖励
+            responser.energy -= response.cost; // 响应玩家需要支付响应卡的能量
+            responser.handCards.Remove(response); // 响应玩家需要移除响应卡
+            UIManager.Instance.UpdateBasePanel(responser.playerId); // 更新UI
+            if(GameManager.Instance.currentPlayerId == 0)
+            {
+                SpawnManager.Instance.RemoveCardFromHand_Broadcast(); // 如果当前玩家是响应玩家，需要更新UI移除手牌
+            }
+            GameManager.Instance.CompleteBroadcast(card, response, player, responser);
+            responser.handCards.Add(CardManager.Instance.Draw()); // 响应广播卡的玩家抽一张牌作为奖励
         }
         
         

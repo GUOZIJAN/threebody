@@ -26,9 +26,6 @@ public class Player : MonoBehaviour
         bool response = await resBroadcast.ShowAsync();
         if (response)
         {
-            data.energy -= currentCard.cost;
-            data.handCards.Remove(currentCard);
-            SpawnManager.Instance.RemoveCardFromHand_Broadcast();
             Debug.Log($"玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
             return (BroadcastCard)currentCard;
         }

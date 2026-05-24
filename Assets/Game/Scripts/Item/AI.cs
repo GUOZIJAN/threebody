@@ -22,8 +22,6 @@ public class AI : MonoBehaviour
             {
                 if(data.energy >= handCard.cost)
                 {
-                    data.energy -= handCard.cost;
-                    data.handCards.Remove(handCard);
                     Debug.Log($"AI玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
                     return (BroadcastCard)handCard;
                 }
