@@ -115,7 +115,19 @@ public class ActionManager : MonoBehaviour
         else
         {
             CardManager.Instance.broadcastUsed.Add(card);
-            response = BroadcastRes.Values.First(); // 这里简单地取第一个响应的广播卡来处理后续效果，实际可以根据需求设计更复杂的逻辑
+            //玩家可以自主选择，并有UI提示
+            if(GameManager.Instance.currentPlayerId == 0)
+            {
+                EventManager.OnPlayerChooseBroadcast?.Invoke();
+                int index = await ChoiceManager.Instance.PlayerChoose();
+                EventManager.AfterPlayerChooseBroadcast?.Invoke();
+                response = BroadcastRes.Values.ElementAt(index);
+            }
+            //AI默认响应第一个
+            else
+            {
+                response = BroadcastRes.Values.First(); 
+            }
             responser = PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
 
             responser.energy -= response.cost; // 响应玩家需要支付响应卡的能量

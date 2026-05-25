@@ -16,6 +16,8 @@ public class UIManager : MonoBehaviour
     public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
 
     private GameManager gameManager;
+    private Color PannelAvailableColor = new Color32(95,255,0,100);
+    private Color PannelUnavailableColor = new Color32(255,255,255,100);
 
     private void Awake()
     {
@@ -29,6 +31,8 @@ public class UIManager : MonoBehaviour
         EventManager.OnPlayerEliminate += ChangePanelColor;
         EventManager.OnDrawCard += (card) => UpdateCardCount();
         EventManager.OnFly += UpdateAfterFly;
+        EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelAvailableColor);
+        EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelUnavailableColor);
     }
 
     public void Init()
@@ -177,6 +181,15 @@ public class UIManager : MonoBehaviour
         if(player.playerId == 0)
         {
             PlayerGalaxyText.text = $"所在星系: {targetGalaxy.id}";   //玩家需额外更新星系
+        }
+    }
+
+    public void ChangePlayerPanelColor(Color color)
+    {
+        Dictionary<int, BroadcastCard> BroadcastRes = ActionManager.Instance.BroadcastRes;
+        foreach(var playerId in BroadcastRes.Keys)
+        {
+            PlayerPanels[playerId].GetComponent<Image>().color = color;
         }
     }
 }

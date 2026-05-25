@@ -7,6 +7,7 @@ public class ChoiceManager : MonoBehaviour
     public Galaxy AISelectedGalaxy;
     private TaskCompletionSource<Galaxy> galaxyTcs;
     private TaskCompletionSource<bool> PlayerTurnTcs;
+    private TaskCompletionSource<int> playerChooseTcs;
 
     private void Awake()
     {
@@ -20,6 +21,18 @@ public class ChoiceManager : MonoBehaviour
         return galaxyTcs.Task;
     }
 
+    public Task<int> PlayerChoose()
+    {
+        playerChooseTcs = new TaskCompletionSource<int>();
+        // 显示选项UI，等待玩家选择
+        // 这里需要实现一个UI界面来显示options，并在玩家选择后调用OnPlayerChoose(index)
+        return playerChooseTcs.Task;
+    }
+
+    public void OnPlayerChoose(int index)
+    {
+        playerChooseTcs?.SetResult(index);
+    }
 
     public void OnGalaxySelected(Galaxy galaxy)
     {
