@@ -124,7 +124,7 @@ public class ActionManager : MonoBehaviour
                 int index = await ChoiceManager.Instance.PlayerChoose();
                 Debug.Log($"玩家选择了响应{index}");
                 EventManager.AfterPlayerChooseBroadcast?.Invoke();
-                response = BroadcastRes.Values.ElementAt(index);
+                response = BroadcastRes[index];
             }
             //AI默认响应第一个
             else
