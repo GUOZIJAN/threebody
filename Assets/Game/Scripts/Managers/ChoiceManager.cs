@@ -14,6 +14,11 @@ public class ChoiceManager : MonoBehaviour
         Instance = this;
     }
 
+    public void ClearGalaxyTcs()
+    {
+        galaxyTcs = null;
+    }
+
     public Task<Galaxy> ChooseGalaxy()
     {
         galaxyTcs = new TaskCompletionSource<Galaxy>();
@@ -32,11 +37,12 @@ public class ChoiceManager : MonoBehaviour
     public void OnPlayerChoose(int index)
     {
         playerChooseTcs?.SetResult(index);
+        playerChooseTcs = null;
     }
 
     public void OnGalaxySelected(Galaxy galaxy)
     {
-        galaxyTcs?.SetResult(galaxy);
+        galaxyTcs?.SetResult(galaxy);  //这里不能直接赋值null
     }
 
     public void CheckAI()
@@ -59,5 +65,6 @@ public class ChoiceManager : MonoBehaviour
     public void OnPlayerTurnEnd()
     {
         PlayerTurnTcs?.SetResult(true);
+        PlayerTurnTcs = null;
     }
 }

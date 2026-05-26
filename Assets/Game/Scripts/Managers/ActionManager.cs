@@ -44,6 +44,8 @@ public class ActionManager : MonoBehaviour
 
             case CardType.Strike :
                 Galaxy targetGalaxy = await ChoiceManager.Instance.ChooseGalaxy();
+                //先暂时放在这里处理，后续重构
+                ChoiceManager.Instance.ClearGalaxyTcs(); // 使用完后清空TaskCompletionSource，防止重复使用
                 DoStrike(player, (StrikeCard)card, targetGalaxy);
                 break;
         }
@@ -120,6 +122,7 @@ public class ActionManager : MonoBehaviour
             {
                 EventManager.OnPlayerChooseBroadcast?.Invoke();
                 int index = await ChoiceManager.Instance.PlayerChoose();
+                Debug.Log($"玩家选择了响应{index}");
                 EventManager.AfterPlayerChooseBroadcast?.Invoke();
                 response = BroadcastRes.Values.ElementAt(index);
             }
