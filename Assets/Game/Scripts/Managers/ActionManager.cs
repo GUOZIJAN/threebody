@@ -112,6 +112,7 @@ public class ActionManager : MonoBehaviour
             CardManager.Instance.discard.Add(card);
             player.energy += 1; //没有玩家响应广播卡返还1点能量
             Debug.Log("没有玩家响应广播卡");
+            UIManager.Instance.UpdateBasePanel(player.playerId);// 只需要发布方更新UI
             return;
         }
         else
@@ -135,13 +136,14 @@ public class ActionManager : MonoBehaviour
 
             responser.energy -= response.cost; // 响应玩家需要支付响应卡的能量
             responser.handCards.Remove(response); // 响应玩家需要移除响应卡
-            UIManager.Instance.UpdateBasePanel(responser.playerId); // 更新UI
             if(GameManager.Instance.currentPlayerId == 0)
             {
                 SpawnManager.Instance.RemoveCardFromHand_Broadcast(); // 如果当前玩家是响应玩家，需要更新UI移除手牌
             }
             GameManager.Instance.CompleteBroadcast(card, response, player, responser);
             responser.handCards.Add(CardManager.Instance.Draw()); // 响应广播卡的玩家抽一张牌作为奖励
+            UIManager.Instance.UpdateBasePanel(responser.playerId); // 更新UI
+            UIManager.Instance.UpdateBasePanel(player.playerId);// 双方都要更新UI
         }
         
         

@@ -16,8 +16,8 @@ public class UIManager : MonoBehaviour
     public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
 
     private GameManager gameManager;
-    private Color PannelAvailableColor = new Color32(95,255,0,100);
-    private Color PannelUnavailableColor = new Color32(255,255,255,100);
+    private Color PanelAvailableColor = new Color32(95,255,0,100);
+    private Color PanelUnavailableColor = new Color32(255,255,255,100);
 
     private void Awake()
     {
@@ -31,8 +31,8 @@ public class UIManager : MonoBehaviour
         EventManager.OnPlayerEliminate += ChangePanelColor;
         EventManager.OnDrawCard += (card) => UpdateCardCount();
         EventManager.OnFly += UpdateAfterFly;
-        EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelAvailableColor);
-        EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelUnavailableColor);
+        EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelAvailableColor);
+        EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelUnavailableColor);
         EventManager.OnGameStart += () => UpdateAllPanels();
     }
 
