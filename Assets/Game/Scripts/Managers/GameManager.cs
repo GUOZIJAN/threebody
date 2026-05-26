@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour
         state = GameState.Gaming;
         currentPlayerId = 0;
         players.HandCardInit();
+        EventManager.OnGameStart?.Invoke();
         EventManager.OnTurnStart?.Invoke();
     }
 

@@ -33,6 +33,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnFly += UpdateAfterFly;
         EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelAvailableColor);
         EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PannelUnavailableColor);
+        EventManager.OnGameStart += () => UpdateAllPanels();
     }
 
     public void Init()
@@ -190,6 +191,14 @@ public class UIManager : MonoBehaviour
         foreach(var playerId in BroadcastRes.Keys)
         {
             PlayerPanels[playerId].GetComponent<Image>().color = color;
+        }
+    }
+
+    public void UpdateAllPanels()
+    {
+        for(int i = 0; i < PlayerPanels.Count; i++)
+        {
+            UpdateBasePanel(i);
         }
     }
 }

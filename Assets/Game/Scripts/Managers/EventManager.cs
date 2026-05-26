@@ -11,4 +11,5 @@ public static class EventManager
     public static Action<PlayerData,Galaxy> OnFly;
     public static Action OnPlayerChooseBroadcast;
     public static Action AfterPlayerChooseBroadcast;
+    public static Action OnGameStart;
 }
