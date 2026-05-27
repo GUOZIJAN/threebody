@@ -93,6 +93,19 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
+    public void RemoveCardFromHand(GameObject card)
+    {
+        if(GameManager.Instance.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
+        CardView cardView = card.GetComponent<CardView>();
+        if (handCards.Contains(cardView))
+        {
+            handCards.Remove(cardView);
+            // 将对应的手牌位置添加回空闲列表
+            emptyHandPoints.Add(card.transform.parent);
+            Destroy(card);
+        }
+    }
+
     //后续重构
     public void RemoveCardFromHand_Broadcast()
     {

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -5,9 +6,12 @@ public class ChoiceManager : MonoBehaviour
 {
     public static ChoiceManager Instance;
     public Galaxy AISelectedGalaxy;
+    public List<GameObject> drawnCards = new List<GameObject>();
+    public bool isDrawingCards = false;
     private TaskCompletionSource<Galaxy> galaxyTcs;
     private TaskCompletionSource<bool> PlayerTurnTcs;
     private TaskCompletionSource<int> playerChooseTcs;
+    private TaskCompletionSource<List<GameObject>> drawCardTcs;
 
     private void Awake()
     {
@@ -34,6 +38,13 @@ public class ChoiceManager : MonoBehaviour
         return playerChooseTcs.Task;
     }
 
+    public Task<List<GameObject>> FoldCards()
+    {
+        drawCardTcs = new TaskCompletionSource<List<GameObject>>();
+        isDrawingCards = true;
+        return drawCardTcs.Task;
+    }
+
     public void OnPlayerChoose(int index)
     {
         playerChooseTcs?.SetResult(index);
@@ -43,6 +54,14 @@ public class ChoiceManager : MonoBehaviour
     public void OnGalaxySelected(Galaxy galaxy)
     {
         galaxyTcs?.SetResult(galaxy);  //这里不能直接赋值null
+    }
+
+    public void OnCardsFolded()
+    {
+        isDrawingCards = false;
+        drawCardTcs?.SetResult(drawnCards);
+        drawnCards.Clear();
+        drawCardTcs = null;
     }
 
     public void CheckAI()

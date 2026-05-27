@@ -96,6 +96,24 @@ public class UIManager : MonoBehaviour
         await GameManager.Instance.GameCircle();
     }
 
+    public async void OnFoldCardButtonClicked()
+    {
+        List<GameObject> drawnCards = await ChoiceManager.Instance.FoldCards();
+        foreach (GameObject card in drawnCards)
+        {
+            // 处理弃掉的卡牌
+            PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
+            SpawnManager.Instance.RemoveCardFromHand(card);
+            CardManager.Instance.discard.Add(card.GetComponent<CardView>().card);
+        }
+        UpdateBasePanel(gameManager.currentPlayerId); // 更新玩家面板显示
+    }
+
+    public void OnConfirmFoldButtonClicked()
+    {
+        ChoiceManager.Instance.OnCardsFolded();
+    }
+
     public void UpdateBasePanel(int playerId)
     {
         // 根据playerId更新对应的玩家面板UI
