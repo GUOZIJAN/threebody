@@ -53,13 +53,19 @@ public class CardView : MonoBehaviour, IPointerClickHandler
         GameObject other = GameManager.Instance.currentCard;
         if(other != gameObject)
         {
-            if(other != null)
+            //可单选或多选
+            if(other != null && ChoiceManager.Instance.isDrawingCards == false)
             {
                 other.GetComponent<CardView>().MoveCardDown();
             }
             _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
             GameManager.Instance.currentCard = gameObject;
             Player.Instance.currentCard = gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
+            
+            if(ChoiceManager.Instance.isDrawingCards == true)
+            {
+                ChoiceManager.Instance.drawnCards.Add(gameObject);
+            }
         }
     }
 
