@@ -137,7 +137,7 @@ public class ActionManager : MonoBehaviour
             
             responser.energy -= response.cost; // 响应玩家需要支付响应卡的能量
             responser.handCards.Remove(response); // 响应玩家需要移除响应卡
-            if(GameManager.Instance.currentPlayerId == 0)
+            if(responser.playerId == 0)
             {
                 SpawnManager.Instance.RemoveCardFromHand_Broadcast(); // 如果当前玩家是响应玩家，需要更新UI移除手牌
             }
