@@ -67,6 +67,19 @@ public class CardView : MonoBehaviour, IPointerClickHandler
                 ChoiceManager.Instance.drawnCards.Add(gameObject);
             }
         }
+
+        //如果点击同一张牌，则取消选中
+        else
+        {
+            MoveCardDown();
+            GameManager.Instance.currentCard = null;
+            Player.Instance.currentCard = null;
+
+            if(ChoiceManager.Instance.isDrawingCards == true)
+            {
+                ChoiceManager.Instance.drawnCards.Remove(gameObject);
+            }
+        }
     }
 
     public void MoveCardDown()
