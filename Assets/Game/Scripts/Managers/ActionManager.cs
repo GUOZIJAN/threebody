@@ -122,18 +122,19 @@ public class ActionManager : MonoBehaviour
             if(GameManager.Instance.currentPlayerId == 0)
             {
                 EventManager.OnPlayerChooseBroadcast?.Invoke();
-                int index = await ChoiceManager.Instance.PlayerChoose();
-                Debug.Log($"玩家选择了响应{index}");
+                int key = await ChoiceManager.Instance.PlayerChoose();
+                Debug.Log($"玩家选择了响应{key}");
                 EventManager.AfterPlayerChooseBroadcast?.Invoke();
-                response = BroadcastRes[index];
+                response = BroadcastRes[key];
+                responser = PlayerManager.Instance.GetPlayer(key);
             }
             //AI默认响应第一个
             else
             {
                 response = BroadcastRes.Values.First(); 
+                responser = PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
             }
-            responser = PlayerManager.Instance.GetPlayer(BroadcastRes.Keys.First());
-
+            
             responser.energy -= response.cost; // 响应玩家需要支付响应卡的能量
             responser.handCards.Remove(response); // 响应玩家需要移除响应卡
             if(GameManager.Instance.currentPlayerId == 0)
