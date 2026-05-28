@@ -86,6 +86,7 @@ public class GameManager : MonoBehaviour
         {
             player.handCards.Add(cards.Draw());
         }
+        UIManager.Instance.UpdateBasePanel(currentPlayerId);
     }
 
     //找到下一个存活的玩家，更新currentPlayerId

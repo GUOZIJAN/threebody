@@ -10,6 +10,8 @@ public class UIManager : MonoBehaviour
     public GameObject UseCardButton;
     public GameObject GameStartButton;
     public GameObject EndTurnButton;
+    public GameObject FoldCardButton;
+    public GameObject ConfirmFoldButton;
     public GameObject ItemPrefab;
     public TextMeshProUGUI CardCountText;
     public TextMeshProUGUI PlayerGalaxyText;   // 显示玩家所在星系的文本组件
@@ -24,6 +26,7 @@ public class UIManager : MonoBehaviour
         Instance = this;
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
+        EventManager.OnTurnStart += ShowFoldCardButton;
         EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
         EventManager.OnTurnStart += () => UpdateStrikePanel(gameManager.currentPlayerId);
         EventManager.OnPlayCard += UpdateBasePanel;
@@ -70,6 +73,20 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void ShowFoldCardButton()
+    {
+        if(gameManager.currentPlayerId == 0)
+        {
+            FoldCardButton.SetActive(true);
+            Debug.Log("显示弃牌按钮");
+        }
+        else
+        {
+            FoldCardButton.SetActive(false);
+            Debug.Log("隐藏弃牌按钮");
+        }
+    }
+
     public async void OnUseCardButtonClicked()
     {
         if(gameManager.currentCard == null)
@@ -98,7 +115,20 @@ public class UIManager : MonoBehaviour
 
     public async void OnFoldCardButtonClicked()
     {
+        UseCardButton.SetActive(false);
+        EndTurnButton.SetActive(false);
+        FoldCardButton.SetActive(false);
+        ConfirmFoldButton.SetActive(true);
+
+        if(gameManager.currentCard != null)
+        {
+            gameManager.currentCard.GetComponent<CardView>().MoveCardDown();
+            gameManager.currentCard = null;     //弃牌时,清空'当前卡牌'
+            Player.Instance.currentCard = null;    //同样清空Player的currentCard
+        }
+
         List<GameObject> drawnCards = await ChoiceManager.Instance.FoldCards();
+        
         foreach (GameObject card in drawnCards)
         {
             // 处理弃掉的卡牌
@@ -106,7 +136,10 @@ public class UIManager : MonoBehaviour
             SpawnManager.Instance.RemoveCardFromHand(card);
             CardManager.Instance.discard.Add(card.GetComponent<CardView>().card);
         }
+
         UpdateBasePanel(gameManager.currentPlayerId); // 更新玩家面板显示
+        ConfirmFoldButton.SetActive(false);
+        ChoiceManager.Instance.OnPlayerTurnEnd(); // 弃牌后直接结束回合
     }
 
     public void OnConfirmFoldButtonClicked()
