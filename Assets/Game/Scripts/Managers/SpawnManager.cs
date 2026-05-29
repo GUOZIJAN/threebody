@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using TMPro;
 using DG.Tweening;
 using Unity.VisualScripting;
@@ -16,12 +17,42 @@ public class SpawnManager : MonoBehaviour
     public GameObject HandCardPanel;
 
     private Sprite cardBackSprite;
+    private Dictionary<string,string> cardDesc;
 
     private void Awake()
     {
         Instance = this;
         emptyHandPoints = new List<Transform>(handPoints);
         handCards = new List<CardView>();
+        
+        // 从 Resources/Card.json 加载并解析为字典
+        cardDesc = LoadCardDescFromResources("Card");
+    }
+
+    private Dictionary<string, string> LoadCardDescFromResources(string resourceName)
+    {
+        TextAsset json = Resources.Load<TextAsset>(resourceName);
+        if (json == null)
+        {
+            Debug.LogError($"Resources/{resourceName}.json 加载失败");
+            return new Dictionary<string, string>();
+        }
+        return ParseJsonToDictionary(json.text);
+    }
+
+    private Dictionary<string, string> ParseJsonToDictionary(string json)
+    {
+        var dict = new Dictionary<string, string>();
+        if (string.IsNullOrEmpty(json))
+            return dict;
+
+        var regex = new Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"");
+        foreach (Match match in regex.Matches(json))
+        {
+            dict[match.Groups[1].Value] = match.Groups[2].Value;
+        }
+
+        return dict;
     }
 
     private void OnEnable()
@@ -48,8 +79,16 @@ public class SpawnManager : MonoBehaviour
 
             newCard.transform.Find("CostText").GetComponent<TextMeshProUGUI>().text = card.cost.ToString();
             newCard.transform.Find("NameText").GetComponent<TextMeshProUGUI>().text = card.cardname;
-            //后续补充简介
-            newCard.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = card.cardname;
+            
+            //如果是广播卡，索引需加上BroadcastChoice类型
+            string key = card.cardname;
+            if(card.type == CardType.Broadcast)
+            {
+                key += ((BroadcastCard)card).choice.ToString();
+            }
+
+            //从Resources/Card.json加载的卡牌描述文本
+            newCard.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = cardDesc[key];
             newCard.transform.Find("TypeText").GetComponent<TextMeshProUGUI>().text = card.type.ToString();
             TextMeshProUGUI t =  newCard.transform.Find("PowerText").GetComponent<TextMeshProUGUI>();
             //不同种类 power文本的含义不同
@@ -119,6 +158,5 @@ public class SpawnManager : MonoBehaviour
             Destroy(card);
         }
     }
-
 }
 
