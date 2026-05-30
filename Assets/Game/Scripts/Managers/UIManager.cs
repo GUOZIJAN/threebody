@@ -31,6 +31,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnTurnStart += () => UpdateStrikePanel(gameManager.currentPlayerId);
         EventManager.OnPlayCard += UpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
+        EventManager.OnPlayCard += (id,card) => FoldCardButton.SetActive(false);
         EventManager.OnPlayerEliminate += ChangePanelColor;
         EventManager.OnDrawCard += (card) => UpdateCardCount();
         EventManager.OnFly += UpdateAfterFly;
@@ -127,9 +128,9 @@ public class UIManager : MonoBehaviour
             Player.Instance.currentCard = null;    //同样清空Player的currentCard
         }
 
-        List<GameObject> drawnCards = await ChoiceManager.Instance.FoldCards();
+        List<GameObject> foldedCards = await ChoiceManager.Instance.FoldCards();
         
-        foreach (GameObject card in drawnCards)
+        foreach (GameObject card in foldedCards)
         {
             // 处理弃掉的卡牌
             PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);

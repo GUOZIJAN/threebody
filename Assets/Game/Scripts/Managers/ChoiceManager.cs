@@ -6,12 +6,12 @@ public class ChoiceManager : MonoBehaviour
 {
     public static ChoiceManager Instance;
     public Galaxy AISelectedGalaxy;
-    public List<GameObject> drawnCards = new List<GameObject>();
-    public bool isDrawingCards = false;
+    public List<GameObject> foldedCards = new List<GameObject>();
+    public bool isFoldingCards = false;
     private TaskCompletionSource<Galaxy> galaxyTcs;
     private TaskCompletionSource<bool> PlayerTurnTcs;
     private TaskCompletionSource<int> playerChooseTcs;
-    private TaskCompletionSource<List<GameObject>> drawCardTcs;
+    private TaskCompletionSource<List<GameObject>> foldCardTcs;
 
     private void Awake()
     {
@@ -40,9 +40,9 @@ public class ChoiceManager : MonoBehaviour
 
     public Task<List<GameObject>> FoldCards()
     {
-        drawCardTcs = new TaskCompletionSource<List<GameObject>>();
-        isDrawingCards = true;
-        return drawCardTcs.Task;
+        foldCardTcs = new TaskCompletionSource<List<GameObject>>();
+        isFoldingCards = true;
+        return foldCardTcs.Task;
     }
 
     public void OnPlayerChoose(int index)
@@ -58,10 +58,10 @@ public class ChoiceManager : MonoBehaviour
 
     public void OnCardsFolded()
     {
-        isDrawingCards = false;
-        drawCardTcs?.SetResult(drawnCards);
-        drawnCards.Clear();
-        drawCardTcs = null;
+        isFoldingCards = false;
+        foldCardTcs?.SetResult(foldedCards);
+        foldedCards.Clear();
+        foldCardTcs = null;
     }
 
     public void CheckAI()

@@ -54,7 +54,7 @@ public class CardView : MonoBehaviour, IPointerClickHandler
         if(other != gameObject)
         {
             //可单选或多选
-            if(other != null && ChoiceManager.Instance.isDrawingCards == false)
+            if(other != null && ChoiceManager.Instance.isFoldingCards == false)
             {
                 other.GetComponent<CardView>().MoveCardDown();
             }
@@ -62,9 +62,9 @@ public class CardView : MonoBehaviour, IPointerClickHandler
             GameManager.Instance.currentCard = gameObject;
             Player.Instance.currentCard = gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
             
-            if(ChoiceManager.Instance.isDrawingCards == true)
+            if(ChoiceManager.Instance.isFoldingCards == true)
             {
-                ChoiceManager.Instance.drawnCards.Add(gameObject);
+                ChoiceManager.Instance.foldedCards.Add(gameObject);
             }
         }
 
@@ -75,9 +75,9 @@ public class CardView : MonoBehaviour, IPointerClickHandler
             GameManager.Instance.currentCard = null;
             Player.Instance.currentCard = null;
 
-            if(ChoiceManager.Instance.isDrawingCards == true)
+            if(ChoiceManager.Instance.isFoldingCards == true)
             {
-                ChoiceManager.Instance.drawnCards.Remove(gameObject);
+                ChoiceManager.Instance.foldedCards.Remove(gameObject);
             }
         }
     }
