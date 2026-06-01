@@ -70,7 +70,7 @@ public class SpawnManager : MonoBehaviour
     public void SpawnCard(Card card)
     {
         //有空位并且实际手牌小于显示手牌
-        if (emptyHandPoints.Count > 0 && PlayerManager.Instance.GetPlayer(GameManager.Instance.currentPlayerId).handCards.Count > handCards.Count)
+        if (emptyHandPoints.Count > 0 && PlayerManager.Instance.GetPlayer(0).handCards.Count > handCards.Count)
         {
             Transform handPoint = emptyHandPoints[0];
             emptyHandPoints.RemoveAt(0);
