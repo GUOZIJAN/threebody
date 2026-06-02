@@ -51,7 +51,9 @@ public class PlayerManager : MonoBehaviour
         {
             for(int j = 0; j < 4; j++)
             {
-                Players[i].handCards.Add(CardManager.Instance.Draw());
+                Card card = CardManager.Instance.Draw();
+                Players[i].handCards.Add(card);
+                EventManager.OnDrawCard?.Invoke(card);
             }
         }
         

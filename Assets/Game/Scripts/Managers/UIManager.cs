@@ -136,6 +136,11 @@ public class UIManager : MonoBehaviour
             PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
             SpawnManager.Instance.RemoveCardFromHand(card);
             CardManager.Instance.discard.Add(card.GetComponent<CardView>().card);
+            Debug.Log($"玩家{gameManager.currentPlayerId}弃掉了一张牌，当前手牌数量：{PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Count}");
+            foreach( Card c in PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards)
+            {
+                Debug.Log($"玩家{gameManager.currentPlayerId}的手牌中还有：{c.cardname}");
+            }
         }
 
         UpdateBasePanel(gameManager.currentPlayerId); // 更新玩家面板显示

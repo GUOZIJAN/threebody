@@ -142,7 +142,11 @@ public class ActionManager : MonoBehaviour
                 SpawnManager.Instance.RemoveCardFromHand_Broadcast(); // 如果当前玩家是响应玩家，需要更新UI移除手牌
             }
             GameManager.Instance.CompleteBroadcast(card, response, player, responser);
-            responser.handCards.Add(CardManager.Instance.Draw()); // 响应广播卡的玩家抽一张牌作为奖励
+
+            Card c = CardManager.Instance.Draw();
+            responser.handCards.Add(c); // 响应广播卡的玩家抽一张牌作为奖励
+            EventManager.OnDrawCard?.Invoke(c); // 更新UI显示新抽的牌
+            
             UIManager.Instance.UpdateBasePanel(responser.playerId); // 更新UI
             UIManager.Instance.UpdateBasePanel(player.playerId);// 双方都要更新UI
         }

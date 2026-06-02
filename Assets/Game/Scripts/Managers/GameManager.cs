@@ -84,7 +84,9 @@ public class GameManager : MonoBehaviour
     {
         while(player.handCards.Count < 4)
         {
-            player.handCards.Add(cards.Draw());
+            Card card = cards.Draw();
+            player.handCards.Add(card);
+            EventManager.OnDrawCard?.Invoke(card);
         }
         UIManager.Instance.UpdateBasePanel(currentPlayerId);
     }
