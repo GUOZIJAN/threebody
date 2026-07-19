@@ -8,6 +8,10 @@ public class CardManager : MonoBehaviour
     public List<Card> discard = new List<Card>();
     public List<Card> broadcastUsed = new List<Card>();
 
+    [Header("ScriptableObject 配置（可选）")]
+    [Tooltip("拖入 DeckConfigSO 后，可调用 InitDeckFromConfig() 从配置构建牌堆")]
+    [SerializeField] private DeckConfigSO deckConfig;
+
     private void Awake()
     {
         Instance = this;
@@ -57,6 +61,44 @@ public class CardManager : MonoBehaviour
 
         Shuffle(deck);
         Debug.Log("牌堆初始化完成");
+    }
+
+    /// <summary>
+    /// 从 DeckConfigSO (ScriptableObject) 构建牌堆。
+    /// 需要在 Inspector 中拖入 DeckConfigSO 资产。
+    /// 如果未配置，回退到硬编码的 InitDeck()。
+    /// </summary>
+    public void InitDeckFromConfig()
+    {
+        deck.Clear();
+
+        if (deckConfig == null)
+        {
+            Debug.LogWarning("CardManager: deckConfig 未配置，回退到默认硬编码牌堆。");
+            InitDeck();
+            return;
+        }
+
+        var configDeck = deckConfig.BuildDeck();
+        if (configDeck == null || configDeck.Count == 0)
+        {
+            Debug.LogWarning("CardManager: DeckConfigSO 构建牌堆为空，回退到默认硬编码牌堆。");
+            InitDeck();
+            return;
+        }
+
+        deck = configDeck;
+        Shuffle(deck);
+        Debug.Log($"牌堆初始化完成（来自 DeckConfigSO），共 {deck.Count} 张");
+    }
+
+    /// <summary>
+    /// 重新加载配置并重建牌堆（Editor 热重载用）。
+    /// </summary>
+    [ContextMenu("从配置重建牌堆")]
+    private void ReloadDeckFromConfig()
+    {
+        InitDeckFromConfig();
     }
 
     public void Shuffle(List<Card> list)

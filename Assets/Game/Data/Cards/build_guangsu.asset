@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d632d8eae15e37947b9a8802450ff1b3, type: 3}
+  m_Name: build_guangsu
+  m_EditorClassIdentifier: 
+  cardId: build_guangsu
+  cardName: "\u5149\u901F\u98DE\u8239"
+  description: "\u53EF\u8DC3\u8FC1\u81F3\u968F\u673A\u5176\u4ED6\u661F\u7CFB,\u4E0D\u80FD\u643A\u5E26\u80FD\u91CF\u548C\u5EFA\u9020\u724C,\u4E14\u53EA\u80FD\u4F7F\u75281\u6B21"
+  cardSprite: {fileID: 0}
+  cardType: 2
+  cost: 10
+  countInDeck: 2
+  broadcastChoice: 0
+  broadcastDistance: 0
+  damage: 0
+  strikeEffect: 0
+  defense: 0
+  produce: 0
+  needSun: 0
+  buildEffect: 1
