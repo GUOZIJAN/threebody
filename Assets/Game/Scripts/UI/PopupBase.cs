@@ -29,6 +29,8 @@ public class PopupBase<TResult> : MonoBehaviour
     public virtual void Close()
     {
         gameObject.SetActive(false);
-        _taskCompletionSource = null;     //暂时未知原因 
+        // 通知等待方操作已取消，避免 async 死锁
+        _taskCompletionSource?.TrySetCanceled();
+        _taskCompletionSource = null;
     }
 }

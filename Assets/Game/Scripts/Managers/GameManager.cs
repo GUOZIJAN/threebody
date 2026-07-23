@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
 
     public async Task GameCircle()
     {
-        while (true)
+        while (state != GameState.GameOver)
         {
             if(currentPlayerId == 0)
             {
@@ -237,15 +237,17 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        state = GameState.GameOver;
+
         if (IsNoPlayerWin())
         {
-            //无人生还
             Debug.Log("无人生还");
+            EventManager.OnGameWin?.Invoke();
         }
-        if(IsLastPlayerWin())
+        else if (IsLastPlayerWin())
         {
-            //单人胜利
             Debug.Log("单人胜利");
+            EventManager.OnGameWin?.Invoke();
         }
     }
 
