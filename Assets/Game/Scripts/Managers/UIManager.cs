@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Collections.Generic;
@@ -106,7 +107,13 @@ public class UIManager : MonoBehaviour
 
     public async void OnUseCardButtonClicked()
     {
-        if(_game.currentCard == null)
+        try { await UseCardAsync(); }
+        catch (Exception e) { Debug.LogError($"使用卡牌失败: {e}"); }
+    }
+
+    private async Task UseCardAsync()
+    {
+        if (_game.currentCard == null)
         {
             Debug.Log("没有选中卡牌！");
             return;
@@ -124,6 +131,12 @@ public class UIManager : MonoBehaviour
 
     public async void OnGameStartButtonClicked()
     {
+        try { await GameStartAsync(); }
+        catch (Exception e) { Debug.LogError($"游戏启动失败: {e}"); }
+    }
+
+    private async Task GameStartAsync()
+    {
         GameStartButton.SetActive(false);
         _game.GameStart();
         await _game.GameCircle();
@@ -131,12 +144,18 @@ public class UIManager : MonoBehaviour
 
     public async void OnFoldCardButtonClicked()
     {
+        try { await FoldCardsAsync(); }
+        catch (Exception e) { Debug.LogError($"弃牌失败: {e}"); }
+    }
+
+    private async Task FoldCardsAsync()
+    {
         UseCardButton.SetActive(false);
         EndTurnButton.SetActive(false);
         FoldCardButton.SetActive(false);
         ConfirmFoldButton.SetActive(true);
 
-        if(_game.currentCard != null)
+        if (_game.currentCard != null)
         {
             _game.currentCard.GetComponent<CardView>().MoveCardDown();
             _game.currentCard = null;
@@ -144,23 +163,22 @@ public class UIManager : MonoBehaviour
         }
 
         List<GameObject> foldedCards = await _choice.FoldCards();
-        
+
         foreach (GameObject card in foldedCards)
         {
-            // 处理弃掉的卡牌
             _players.GetPlayer(_game.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
             _spawn.RemoveCardFromHand(card);
             _cards.discard.Add(card.GetComponent<CardView>().card);
             Debug.Log($"玩家{_game.currentPlayerId}弃掉了一张牌，当前手牌数量：{_players.GetPlayer(_game.currentPlayerId).handCards.Count}");
-            foreach( Card c in _players.GetPlayer(_game.currentPlayerId).handCards)
+            foreach (Card c in _players.GetPlayer(_game.currentPlayerId).handCards)
             {
                 Debug.Log($"玩家{_game.currentPlayerId}的手牌中还有：{c.cardname}");
             }
         }
 
-        UpdateBasePanel(_game.currentPlayerId); // 更新玩家面板显示
+        UpdateBasePanel(_game.currentPlayerId);
         ConfirmFoldButton.SetActive(false);
-        _choice.OnPlayerTurnEnd(); // 弃牌后直接结束回合
+        _choice.OnPlayerTurnEnd();
     }
 
     public void OnConfirmFoldButtonClicked()

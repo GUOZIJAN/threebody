@@ -30,14 +30,12 @@ public class AI : MonoBehaviour
     {
         foreach (var handCard in data.handCards)
         {
-            if (handCard.type == CardType.Broadcast
-                && _galaxies.GetDistance(data.galaxyId, galaxy.id) <= ((BroadcastCard)handCard).distance)
+            if (handCard is BroadcastCard handBroadcast
+                && _galaxies.GetDistance(data.galaxyId, galaxy.id) <= handBroadcast.distance
+                && data.energy >= handBroadcast.cost)
             {
-                if (data.energy >= handCard.cost)
-                {
-                    Debug.Log($"AI玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
-                    return (BroadcastCard)handCard;
-                }
+                Debug.Log($"AI玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
+                return handBroadcast;
             }
         }
         Debug.Log($"AI玩家{data.playerId}没有响应玩家{raiser.playerId}的广播卡{card.cardname}");
@@ -51,15 +49,14 @@ public class AI : MonoBehaviour
             var handCard = data.handCards[i];
             if (data.energy >= handCard.cost)
             {
-                if (handCard.type == CardType.Broadcast)
+                if (handCard is BroadcastCard broadcastCard)
                 {
-                    BroadcastCard card = (BroadcastCard)handCard;
                     Galaxy targetGalaxy = null;
                     int maxDistance = -1;
                     foreach (var galaxy in _galaxies.galaxyList)
                     {
                         int distance = _galaxies.GetDistance(data.galaxyId, galaxy.id);
-                        if (distance <= card.distance && distance > maxDistance)
+                        if (distance <= broadcastCard.distance && distance > maxDistance)
                         {
                             maxDistance = distance;
                             targetGalaxy = galaxy;
@@ -68,21 +65,20 @@ public class AI : MonoBehaviour
                     _choice.AISelectedGalaxy = targetGalaxy;
                     if (targetGalaxy != null)
                     {
-                        await _actions.UseCard(data.playerId, card);
+                        await _actions.UseCard(data.playerId, broadcastCard);
                     }
                 }
-                else if (handCard.type == CardType.Strike)
+                else if (handCard.type == CardType.Strike && handCard is StrikeCard strikeCard)
                 {
-                    StrikeCard card = (StrikeCard)handCard;
-                    Galaxy targetGalaxy = _galaxies.GetGalaxy(Random.Range(1, 10));
+                    int randomIndex = Random.Range(0, _galaxies.galaxyList.Count);
+                    Galaxy targetGalaxy = _galaxies.galaxyList[randomIndex];
                     _choice.AISelectedGalaxy = targetGalaxy;
-                    await _actions.UseCard(data.playerId, card);
+                    await _actions.UseCard(data.playerId, strikeCard);
                 }
-                else if (handCard.type == CardType.Build)
+                else if (handCard.type == CardType.Build && handCard is BuildCard buildCard)
                 {
-                    BuildCard card = (BuildCard)handCard;
-                    await _actions.UseCard(data.playerId, card);
-                    if (card.effect == BuildEffect.Fly)
+                    await _actions.UseCard(data.playerId, buildCard);
+                    if (buildCard.effect == BuildEffect.Fly)
                     {
                         break;
                     }
