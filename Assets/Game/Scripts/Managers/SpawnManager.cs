@@ -19,14 +19,24 @@ public class SpawnManager : MonoBehaviour
     private Sprite cardBackSprite;
     private Dictionary<string,string> cardDesc;
 
+    private GameManager _game;
+    private PlayerManager _players;
+
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
         emptyHandPoints = new List<Transform>(handPoints);
         handCards = new List<CardView>();
         
         // 从 Resources/Card.json 加载并解析为字典
         cardDesc = LoadCardDescFromResources("Card");
+    }
+
+    private void Start()
+    {
+        _game    = Services.Get<GameManager>();
+        _players = Services.Get<PlayerManager>();
     }
 
     private Dictionary<string, string> LoadCardDescFromResources(string resourceName)
@@ -70,7 +80,7 @@ public class SpawnManager : MonoBehaviour
     public void SpawnCard(Card card)
     {
         //有空位并且实际手牌小于显示手牌
-        if (emptyHandPoints.Count > 0 && PlayerManager.Instance.GetPlayer(0).handCards.Count > handCards.Count)
+        if (emptyHandPoints.Count > 0 && _players.GetPlayer(0).handCards.Count > handCards.Count)
         {
             Transform handPoint = emptyHandPoints[0];
             emptyHandPoints.RemoveAt(0);
@@ -121,8 +131,8 @@ public class SpawnManager : MonoBehaviour
 
     public void RemoveCardFromHand()
     {
-        if(GameManager.Instance.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
-        GameObject card = GameManager.Instance.currentCard;
+        if(_game.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
+        GameObject card = _game.currentCard;
         CardView cardView = card.GetComponent<CardView>();
         if (handCards.Contains(cardView))
         {
@@ -135,7 +145,7 @@ public class SpawnManager : MonoBehaviour
 
     public void RemoveCardFromHand(GameObject card)
     {
-        if(GameManager.Instance.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
+        if(_game.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
         CardView cardView = card.GetComponent<CardView>();
         if (handCards.Contains(cardView))
         {
@@ -149,7 +159,7 @@ public class SpawnManager : MonoBehaviour
     //后续重构
     public void RemoveCardFromHand_Broadcast()
     {
-        GameObject card = GameManager.Instance.currentCard;
+        GameObject card = _game.currentCard;
         CardView cardView = card.GetComponent<CardView>();
         if (handCards.Contains(cardView))
         {

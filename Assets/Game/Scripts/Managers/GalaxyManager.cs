@@ -12,6 +12,7 @@ public class GalaxyManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
     }
 
     public Galaxy GetGalaxy(int id)

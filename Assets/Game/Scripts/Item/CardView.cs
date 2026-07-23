@@ -9,6 +9,10 @@ public class CardView : MonoBehaviour, IPointerClickHandler
 
     private RectTransform _rect;
 
+    private GameManager _game;
+    private Player _player;
+    private ChoiceManager _choice;
+
     [Header("动画参数")]
     public float moveDuration = 0.6f;     // 移动时长
     public float arcHeight = 150f;        // 弧线高度
@@ -19,6 +23,13 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     private void Awake()
     {
         _rect = GetComponent<RectTransform>();
+    }
+
+    private void Start()
+    {
+        _game   = Services.Get<GameManager>();
+        _choice = Services.Get<ChoiceManager>();
+        _player = Player.Instance;
     }
 
 
@@ -50,21 +61,21 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     //卡牌点击会向上移动并变为选中状态
     public void OnPointerClick(PointerEventData eventData)
     {
-        GameObject other = GameManager.Instance.currentCard;
+        GameObject other = _game.currentCard;
         if(other != gameObject)
         {
             //可单选或多选
-            if(other != null && ChoiceManager.Instance.isFoldingCards == false)
+            if(other != null && _choice.isFoldingCards == false)
             {
                 other.GetComponent<CardView>().MoveCardDown();
             }
             _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
-            GameManager.Instance.currentCard = gameObject;
-            Player.Instance.currentCard = gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
+            _game.currentCard = gameObject;
+            _player.currentCard = gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
             
-            if(ChoiceManager.Instance.isFoldingCards == true)
+            if(_choice.isFoldingCards == true)
             {
-                ChoiceManager.Instance.foldedCards.Add(gameObject);
+                _choice.foldedCards.Add(gameObject);
             }
         }
 
@@ -72,12 +83,12 @@ public class CardView : MonoBehaviour, IPointerClickHandler
         else
         {
             MoveCardDown();
-            GameManager.Instance.currentCard = null;
-            Player.Instance.currentCard = null;
+            _game.currentCard = null;
+            _player.currentCard = null;
 
-            if(ChoiceManager.Instance.isFoldingCards == true)
+            if(_choice.isFoldingCards == true)
             {
-                ChoiceManager.Instance.foldedCards.Remove(gameObject);
+                _choice.foldedCards.Remove(gameObject);
             }
         }
     }

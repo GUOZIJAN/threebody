@@ -15,6 +15,7 @@ public class CardManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
     }
     
     public void InitDeck()

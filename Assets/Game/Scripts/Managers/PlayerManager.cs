@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using System.Linq;
 
 public class PlayerManager : MonoBehaviour
@@ -10,9 +9,19 @@ public class PlayerManager : MonoBehaviour
     public int playerCount = 4;
     public List<PlayerData> Players;
 
+    private GalaxyManager _galaxies;
+    private CardManager _cards;
+
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
+    }
+
+    private void Start()
+    {
+        _galaxies = Services.Get<GalaxyManager>();
+        _cards    = Services.Get<CardManager>();
     }
 
     public PlayerData GetPlayer(int id)
@@ -37,7 +46,7 @@ public class PlayerManager : MonoBehaviour
                 energy = 3,
             };
             Players.Add(newPlayer);
-            GalaxyManager.Instance.GetGalaxy(newPlayer.galaxyId).ownerPlayerId = i;
+            _galaxies.GetGalaxy(newPlayer.galaxyId).ownerPlayerId = i;
         }
         
         Debug.Log("玩家数据初始化完成");
@@ -51,7 +60,7 @@ public class PlayerManager : MonoBehaviour
         {
             for(int j = 0; j < 4; j++)
             {
-                Card card = CardManager.Instance.Draw();
+                Card card = _cards.Draw();
                 Players[i].handCards.Add(card);
                 EventManager.OnDrawCard?.Invoke(card);
             }

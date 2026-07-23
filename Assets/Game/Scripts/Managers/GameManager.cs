@@ -1,10 +1,5 @@
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using TMPro;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
-using System;
 using Unity.Mathematics;
 using System.Threading.Tasks;
 
@@ -13,34 +8,45 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
     public GameState state;
     public int currentPlayerId;
-    public GameObject currentCard;   //plyer还有一个currentCard，表示当前选中的卡的Card
+    public GameObject currentCard;
     public int playerCount = 4;
     public int remainPlayers;
+
+    // 缓存的依赖（通过 Services 获取）
     public PlayerManager players;
     public GalaxyManager galaxys;
     public ActionManager actions;
     public CardManager cards;
     public List<AI> ais;
     public Player player;
+
+    private ChoiceManager _choiceManager;
+    private UIManager _uiManager;
+
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
         state = GameState.Prepare;
     }
 
     private void Start()
     {
-        players = PlayerManager.Instance;
-        galaxys = GalaxyManager.Instance;
-        actions = ActionManager.Instance;
-        cards = CardManager.Instance;
+        // 通过 Services 获取依赖
+        players  = Services.Get<PlayerManager>();
+        galaxys  = Services.Get<GalaxyManager>();
+        actions  = Services.Get<ActionManager>();
+        cards    = Services.Get<CardManager>();
+        _choiceManager = Services.Get<ChoiceManager>();
+        _uiManager     = Services.Get<UIManager>();
+
         playerCount = players.playerCount;
         remainPlayers = playerCount;
         galaxys.Init();
         cards.InitDeck();
         players.Init();
         player.Init();
-        UIManager.Instance.Init();
+        _uiManager.Init();
         ais.ForEach(ai => ai.Init());
     }
 
@@ -60,7 +66,7 @@ public class GameManager : MonoBehaviour
             if(currentPlayerId == 0)
             {
                 //玩家回合
-                await ChoiceManager.Instance.PlayerTurnStart();
+                await _choiceManager.PlayerTurnStart();
             }
             else
             {
@@ -88,7 +94,7 @@ public class GameManager : MonoBehaviour
             player.handCards.Add(card);
             EventManager.OnDrawCard?.Invoke(card);
         }
-        UIManager.Instance.UpdateBasePanel(currentPlayerId);
+        _uiManager.UpdateBasePanel(currentPlayerId);
     }
 
     //找到下一个存活的玩家，更新currentPlayerId
@@ -119,9 +125,9 @@ public class GameManager : MonoBehaviour
     private void CheckStrike(int nowPlayer)
     {
         //中途会发生修改
-        for (int i = ActionManager.Instance.strikeList.Count-1; i >= 0; i--)
+        for (int i = actions.strikeList.Count - 1; i >= 0; i--)
         {
-            StrikeInfo strike = ActionManager.Instance.strikeList[i];
+            StrikeInfo strike = actions.strikeList[i];
             if (strike.attackerId == nowPlayer)
             {
                 strike.remainSteps--;
@@ -129,7 +135,7 @@ public class GameManager : MonoBehaviour
             if (strike.remainSteps == 0)
             {
                 RunStrike(strike);
-                ActionManager.Instance.strikeList.Remove(strike);
+                actions.strikeList.Remove(strike);
             }
         }
     }

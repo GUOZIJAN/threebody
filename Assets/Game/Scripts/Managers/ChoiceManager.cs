@@ -13,9 +13,17 @@ public class ChoiceManager : MonoBehaviour
     private TaskCompletionSource<int> playerChooseTcs;
     private TaskCompletionSource<List<GameObject>> foldCardTcs;
 
+    private GameManager _game;
+
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
+    }
+
+    private void Start()
+    {
+        _game = Services.Get<GameManager>();
     }
 
     public void ClearGalaxyTcs()
@@ -66,7 +74,7 @@ public class ChoiceManager : MonoBehaviour
 
     public void CheckAI()
     {
-        if(GameManager.Instance.currentPlayerId != 0)
+        if(_game.currentPlayerId != 0)
         {
             OnGalaxySelected(AISelectedGalaxy);
             Debug.Log($"AI选择了星系{AISelectedGalaxy.id}");

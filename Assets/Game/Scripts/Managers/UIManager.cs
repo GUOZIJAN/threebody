@@ -14,24 +14,33 @@ public class UIManager : MonoBehaviour
     public GameObject ConfirmFoldButton;
     public GameObject ItemPrefab;
     public TextMeshProUGUI CardCountText;
-    public TextMeshProUGUI PlayerGalaxyText;   // 显示玩家所在星系的文本组件
-    public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
+    public TextMeshProUGUI PlayerGalaxyText;
+    public List<GameObject> PlayerPanels;
 
-    private GameManager gameManager;
-    private Color PanelAvailableColor = new Color32(95,255,0,100);
-    private Color PanelUnavailableColor = new Color32(255,255,255,100);
+    // 缓存的依赖
+    private GameManager _game;
+    private PlayerManager _players;
+    private ActionManager _actions;
+    private ChoiceManager _choice;
+    private Player _player;
+    private SpawnManager _spawn;
+    private CardManager _cards;
+
+    private Color PanelAvailableColor = new Color32(95, 255, 0, 100);
+    private Color PanelUnavailableColor = new Color32(255, 255, 255, 100);
 
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
         EventManager.OnTurnStart += ShowFoldCardButton;
-        EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
-        EventManager.OnTurnStart += () => UpdateStrikePanel(gameManager.currentPlayerId);
+        EventManager.OnTurnStart += () => UpdateBasePanel(_game.currentPlayerId);
+        EventManager.OnTurnStart += () => UpdateStrikePanel(_game.currentPlayerId);
         EventManager.OnPlayCard += UpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
-        EventManager.OnPlayCard += (id,card) => FoldCardButton.SetActive(false);
+        EventManager.OnPlayCard += (id, card) => FoldCardButton.SetActive(false);
         EventManager.OnPlayerEliminate += ChangePanelColor;
         EventManager.OnDrawCard += (card) => UpdateCardCount();
         EventManager.OnFly += UpdateAfterFly;
@@ -42,13 +51,20 @@ public class UIManager : MonoBehaviour
 
     public void Init()
     {
-        gameManager = GameManager.Instance;
-        PlayerGalaxyText.text = $"所在星系: {PlayerManager.Instance.GetPlayer(0).galaxyId}";
+        _game    = Services.Get<GameManager>();
+        _players = Services.Get<PlayerManager>();
+        _actions = Services.Get<ActionManager>();
+        _choice  = Services.Get<ChoiceManager>();
+        _player  = Player.Instance;
+        _spawn   = Services.Get<SpawnManager>();
+        _cards   = Services.Get<CardManager>();
+
+        PlayerGalaxyText.text = $"所在星系: {_players.GetPlayer(0).galaxyId}";
     }
 
     public void ShowUseCardButton()
     {
-        if(gameManager.currentPlayerId == 0)
+        if(_game.currentPlayerId == 0)
         {
             UseCardButton.SetActive(true);
             Debug.Log("显示使用卡牌按钮");
@@ -62,7 +78,7 @@ public class UIManager : MonoBehaviour
 
     public void ShowEndTurnButton()
     {
-        if(gameManager.currentPlayerId == 0)
+        if(_game.currentPlayerId == 0)
         {
             EndTurnButton.SetActive(true);
             Debug.Log("显示结束回合按钮");
@@ -76,7 +92,7 @@ public class UIManager : MonoBehaviour
 
     public void ShowFoldCardButton()
     {
-        if(gameManager.currentPlayerId == 0)
+        if(_game.currentPlayerId == 0)
         {
             FoldCardButton.SetActive(true);
             Debug.Log("显示弃牌按钮");
@@ -90,27 +106,27 @@ public class UIManager : MonoBehaviour
 
     public async void OnUseCardButtonClicked()
     {
-        if(gameManager.currentCard == null)
+        if(_game.currentCard == null)
         {
             Debug.Log("没有选中卡牌！");
             return;
         }
-        await ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
-        gameManager.currentCard = null;     //使用完卡牌后,清空'当前卡牌'
-        Player.Instance.currentCard = null;    //同样清空Player的currentCard，不放在gamemanager，只有玩家使用这个变量
+        await _actions.UseCard(_game.currentPlayerId, _game.currentCard.GetComponent<CardView>().card);
+        _game.currentCard = null;
+        _player.currentCard = null;
     }
 
     public void OnEndTurnButtonClicked()
     {
         Debug.Log("结束回合按钮被点击了！");
-        ChoiceManager.Instance.OnPlayerTurnEnd();
+        _choice.OnPlayerTurnEnd();
     }
 
     public async void OnGameStartButtonClicked()
     {
         GameStartButton.SetActive(false);
-        GameManager.Instance.GameStart();
-        await GameManager.Instance.GameCircle();
+        _game.GameStart();
+        await _game.GameCircle();
     }
 
     public async void OnFoldCardButtonClicked()
@@ -120,36 +136,36 @@ public class UIManager : MonoBehaviour
         FoldCardButton.SetActive(false);
         ConfirmFoldButton.SetActive(true);
 
-        if(gameManager.currentCard != null)
+        if(_game.currentCard != null)
         {
-            gameManager.currentCard.GetComponent<CardView>().MoveCardDown();
-            gameManager.currentCard = null;     //弃牌时,清空'当前卡牌'
-            Player.Instance.currentCard = null;    //同样清空Player的currentCard
+            _game.currentCard.GetComponent<CardView>().MoveCardDown();
+            _game.currentCard = null;
+            _player.currentCard = null;
         }
 
-        List<GameObject> foldedCards = await ChoiceManager.Instance.FoldCards();
+        List<GameObject> foldedCards = await _choice.FoldCards();
         
         foreach (GameObject card in foldedCards)
         {
             // 处理弃掉的卡牌
-            PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
-            SpawnManager.Instance.RemoveCardFromHand(card);
-            CardManager.Instance.discard.Add(card.GetComponent<CardView>().card);
-            Debug.Log($"玩家{gameManager.currentPlayerId}弃掉了一张牌，当前手牌数量：{PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Count}");
-            foreach( Card c in PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards)
+            _players.GetPlayer(_game.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
+            _spawn.RemoveCardFromHand(card);
+            _cards.discard.Add(card.GetComponent<CardView>().card);
+            Debug.Log($"玩家{_game.currentPlayerId}弃掉了一张牌，当前手牌数量：{_players.GetPlayer(_game.currentPlayerId).handCards.Count}");
+            foreach( Card c in _players.GetPlayer(_game.currentPlayerId).handCards)
             {
-                Debug.Log($"玩家{gameManager.currentPlayerId}的手牌中还有：{c.cardname}");
+                Debug.Log($"玩家{_game.currentPlayerId}的手牌中还有：{c.cardname}");
             }
         }
 
-        UpdateBasePanel(gameManager.currentPlayerId); // 更新玩家面板显示
+        UpdateBasePanel(_game.currentPlayerId); // 更新玩家面板显示
         ConfirmFoldButton.SetActive(false);
-        ChoiceManager.Instance.OnPlayerTurnEnd(); // 弃牌后直接结束回合
+        _choice.OnPlayerTurnEnd(); // 弃牌后直接结束回合
     }
 
     public void OnConfirmFoldButtonClicked()
     {
-        ChoiceManager.Instance.OnCardsFolded();
+        _choice.OnCardsFolded();
     }
 
     public void UpdateBasePanel(int playerId)
@@ -157,7 +173,7 @@ public class UIManager : MonoBehaviour
         // 根据playerId更新对应的玩家面板UI
         // 例如，更新玩家的能量、手牌等信息
         GameObject targetPanel = PlayerPanels[playerId];
-        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        PlayerData targetPlayer = _players.GetPlayer(playerId);
         Transform baseInfo = targetPanel.transform.Find("Base");
         // 更新能量显示
         baseInfo.Find("energy").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
@@ -174,7 +190,7 @@ public class UIManager : MonoBehaviour
     public void UpdateItemPanel(int playerId,Card card)
     {
         GameObject targetPanel = PlayerPanels[playerId];
-        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        PlayerData targetPlayer = _players.GetPlayer(playerId);
         Transform itemPanel = null;
         //不同类型卡牌改动不同信息
         switch (card.type)
@@ -208,7 +224,7 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
         
-        foreach (var strike in ActionManager.Instance.strikeList)
+        foreach (var strike in _actions.strikeList)
         {
             if (strike.attackerId == playerId)
             {
@@ -227,7 +243,7 @@ public class UIManager : MonoBehaviour
 
     public void UpdateCardCount()
     {
-        CardCountText.text = $"{CardManager.Instance.deck.Count}"; // 更新牌堆剩余卡牌数量
+        CardCountText.text = $"{_cards.deck.Count}"; // 更新牌堆剩余卡牌数量
     }
 
     public void UpdateAfterFly(PlayerData player,Galaxy targetGalaxy)
@@ -243,7 +259,7 @@ public class UIManager : MonoBehaviour
 
     public void ChangePlayerPanelColor(Color color)
     {
-        Dictionary<int, BroadcastCard> BroadcastRes = ActionManager.Instance.BroadcastRes;
+        Dictionary<int, BroadcastCard> BroadcastRes = _actions.BroadcastRes;
         foreach(var playerId in BroadcastRes.Keys)
         {
             PlayerPanels[playerId].GetComponent<Image>().color = color;

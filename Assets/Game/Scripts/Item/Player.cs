@@ -8,14 +8,22 @@ public class Player : MonoBehaviour
     public ResBroadcast resBroadcast;
     public Card currentCard;
 
+    private PlayerManager _players;
+
     private void Awake()
-    {  
+    {
         Instance = this;
+        Services.Register(this);
+    }
+
+    private void Start()
+    {
+        _players = Services.Get<PlayerManager>();
     }
 
     public void Init()
     {
-        data = PlayerManager.Instance.GetPlayer(0); // 默认玩家ID为0 
+        data = _players.GetPlayer(0);
         Debug.Log($"玩家初始化完成");
     }
 
