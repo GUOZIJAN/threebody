@@ -61,7 +61,12 @@ public class SpawnManager : MonoBehaviour
         return dict;
     }
 
-    private void OnPlayCardHandler(int playerId, Card card) => RemoveCardFromHand(_game.currentCard);
+    private void OnPlayCardHandler(int playerId, Card card)
+    {
+        // 仅当人类玩家打出卡牌时才移除视觉手牌
+        if (playerId == 0 && _game.currentCard != null)
+            RemoveCardFromHand(_game.currentCard);
+    }
 
     private void OnEnable()
     {

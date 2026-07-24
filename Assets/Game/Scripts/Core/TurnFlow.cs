@@ -157,6 +157,15 @@ public class TurnFlow : MonoBehaviour
     public void OnEndTurnClicked()
     {
         if (Phase != TurnPhase.WaitingForAction) return;
+
+        // 结束回合时清理选中，防止后续流程误读残留的 _game.currentCard
+        if (_game.currentCard != null)
+        {
+            _game.currentCard.GetComponent<CardView>().MoveCardDown();
+            _game.currentCard = null;
+        }
+        _player.currentCard = null;
+
         SetPhase(TurnPhase.TurnEnd);
     }
 
@@ -250,6 +259,16 @@ public class TurnFlow : MonoBehaviour
         {
             if (_player.currentCard is not BroadcastCard humanCard) return;
             _actions.BroadcastRes[_player.data.playerId] = humanCard;
+            // 保留 _game.currentCard 引用，供后续 ResolveBroadcast_AI 移除视觉手牌
+        }
+        else
+        {
+            // 拒绝回应：清理选中状态，防止 OnPlayCard 事件误删手牌
+            if (_game.currentCard != null)
+            {
+                _game.currentCard.GetComponent<CardView>().MoveCardDown();
+                _game.currentCard = null;
+            }
             _player.currentCard = null;
         }
 
@@ -575,5 +594,8 @@ public class TurnFlow : MonoBehaviour
                 strikeList.RemoveAt(i);
             }
         }
+
+        // 所有打击结算完毕后，可能出现 strikeList 清空时只剩 1 人的情况
+        _game.GameOver();
     }
 }
