@@ -7,5 +7,4 @@ public class StrikeInfo
     public StrikeEffect effect;
     public int totalDistance;
     public int remainSteps;
-    public bool isActive = true;
 }

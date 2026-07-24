@@ -130,17 +130,15 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        state = GameState.GameOver;
-
         if (IsNoPlayerWin())
         {
+            state = GameState.GameOver;
             Debug.Log("无人生还");
-            EventManager.OnGameWin?.Invoke();
         }
         else if (IsLastPlayerWin())
         {
+            state = GameState.GameOver;
             Debug.Log("单人胜利");
-            EventManager.OnGameWin?.Invoke();
         }
     }
 

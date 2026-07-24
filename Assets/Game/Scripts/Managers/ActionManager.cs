@@ -63,10 +63,4 @@ public class ActionManager : MonoBehaviour
         EventManager.OnFly?.Invoke(player, galaxy);
     }
 
-    /// <summary>弃掉建造牌，回收一半能量</summary>
-    public void DiscardBuildCard(PlayerData player, BuildCard card)
-    {
-        player.buildCards.Remove(card);
-        player.energy += card.cost / 2;
-    }
 }

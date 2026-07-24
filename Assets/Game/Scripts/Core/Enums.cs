@@ -18,13 +18,6 @@ public enum GameState
     GameOver
 }
 
-public enum PlayerAction
-{
-    None,
-    DiscardAndDraw,
-    PlayCard
-}
-
 public enum BuildEffect
 {
     None,

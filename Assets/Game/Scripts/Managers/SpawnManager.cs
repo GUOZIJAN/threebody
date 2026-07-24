@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TMPro;
 using DG.Tweening;
-using Unity.VisualScripting;
 
 public class SpawnManager : MonoBehaviour
 {
@@ -65,16 +64,18 @@ public class SpawnManager : MonoBehaviour
         return dict;
     }
 
+    private void OnPlayCardHandler(int playerId, Card card) => RemoveCardFromHand(_game.currentCard);
+
     private void OnEnable()
     {
         EventManager.OnDrawCard += SpawnCard;
-        EventManager.OnPlayCard += (playerId,card) => RemoveCardFromHand();
+        EventManager.OnPlayCard += OnPlayCardHandler;
     }
 
     private void OnDisable()
     {
         EventManager.OnDrawCard -= SpawnCard;
-        EventManager.OnPlayCard -= (playerId,card) => RemoveCardFromHand();
+        EventManager.OnPlayCard -= OnPlayCardHandler;
     }
 
     public void SpawnCard(Card card)
@@ -93,9 +94,9 @@ public class SpawnManager : MonoBehaviour
             
             //如果是广播卡，索引需加上BroadcastChoice类型
             string key = card.cardname;
-            if(card.type == CardType.Broadcast)
+            if(card is BroadcastCard bKey)
             {
-                key += ((BroadcastCard)card).choice.ToString();
+                key += bKey.choice.ToString();
             }
 
             //从Resources/Card.json加载的卡牌描述文本
@@ -106,10 +107,10 @@ public class SpawnManager : MonoBehaviour
             switch(card.type)
             {
                 case CardType.Broadcast:
-                    t.text = ((BroadcastCard)card).distance.ToString();
+                    t.text = (card is BroadcastCard bc) ? bc.distance.ToString() : "";
                     break;
                 case CardType.Strike:
-                    t.text = ((StrikeCard)card).damage.ToString();
+                    t.text = (card is StrikeCard sc) ? sc.damage.ToString() : "";
                     break;
                 case CardType.Build:
                     t.text = "";
@@ -129,42 +130,13 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-    public void RemoveCardFromHand()
-    {
-        if(_game.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
-        GameObject card = _game.currentCard;
-        CardView cardView = card.GetComponent<CardView>();
-        if (handCards.Contains(cardView))
-        {
-            handCards.Remove(cardView);
-            // 将对应的手牌位置添加回空闲列表
-            emptyHandPoints.Add(card.transform.parent);
-            Destroy(card);
-        }
-    }
-
     public void RemoveCardFromHand(GameObject card)
     {
-        if(_game.currentPlayerId != 0) return; // 只有玩家自己的回合才移除手牌
+        if (card == null) return;
         CardView cardView = card.GetComponent<CardView>();
         if (handCards.Contains(cardView))
         {
             handCards.Remove(cardView);
-            // 将对应的手牌位置添加回空闲列表
-            emptyHandPoints.Add(card.transform.parent);
-            Destroy(card);
-        }
-    }
-
-    //后续重构
-    public void RemoveCardFromHand_Broadcast()
-    {
-        GameObject card = _game.currentCard;
-        CardView cardView = card.GetComponent<CardView>();
-        if (handCards.Contains(cardView))
-        {
-            handCards.Remove(cardView);
-            // 将对应的手牌位置添加回空闲列表
             emptyHandPoints.Add(card.transform.parent);
             Destroy(card);
         }

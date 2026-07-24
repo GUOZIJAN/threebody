@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Data.Common;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 public class GalaxyManager : MonoBehaviour
 {

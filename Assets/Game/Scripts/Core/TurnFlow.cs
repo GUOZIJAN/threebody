@@ -39,7 +39,6 @@ public class TurnFlow : MonoBehaviour
 
     // ==================== 暂存上下文 ====================
     private Card         _pendingCard;
-    private Galaxy       _pendingGalaxy;
     private int          _aiCardIndex;
     private float        _aiDelayTimer;
     private PlayerData   _broadcastInitiator;
@@ -150,7 +149,6 @@ public class TurnFlow : MonoBehaviour
     public void OnGalaxyClicked(Galaxy galaxy)
     {
         if (Phase != TurnPhase.ChoosingGalaxy) return;
-        _pendingGalaxy = galaxy;
         ExecuteCard(galaxy);
     }
 
@@ -248,7 +246,7 @@ public class TurnFlow : MonoBehaviour
 
         if (responded)
         {
-            var humanCard = (BroadcastCard)_player.currentCard;
+            if (_player.currentCard is not BroadcastCard humanCard) return;
             _actions.BroadcastRes[_player.data.playerId] = humanCard;
             _player.currentCard = null;
         }
@@ -261,6 +259,13 @@ public class TurnFlow : MonoBehaviour
     private void ProcessTurnStart()
     {
         var pd = _players.GetPlayer(_game.currentPlayerId);
+        if (!pd.isAlive)
+        {
+            // 当前玩家在打击结算中被淘汰，直接结束其回合
+            SetPhase(TurnPhase.TurnEnd);
+            return;
+        }
+
         ResolveProduction(pd);
         EventManager.OnTurnStart?.Invoke();
 
@@ -273,8 +278,6 @@ public class TurnFlow : MonoBehaviour
     private void ProcessTurnEnd()
     {
         var pd = _players.GetPlayer(_game.currentPlayerId);
-
-        EventManager.OnTurnEnd?.Invoke();
 
         // 补牌到 4 张
         while (pd.handCards.Count < 4)
@@ -399,7 +402,6 @@ public class TurnFlow : MonoBehaviour
 
     private void ExecuteBroadcast(PlayerData player, BroadcastCard card, Galaxy targetGalaxy)
     {
-        player.lastBroadcastGalaxy = player.galaxyId;
         _actions.BroadcastRes.Clear();
         _broadcastCard = card;
         _broadcastInitiator = player;
@@ -416,7 +418,6 @@ public class TurnFlow : MonoBehaviour
         // 如果 AI 是广播发起者，且人类存活 → 需要人类弹窗回应
         if (player.playerId != 0 && _players.GetPlayer(0).isAlive)
         {
-            _pendingGalaxy = targetGalaxy;
             SetPhase(TurnPhase.WaitingBroadcastRespond);
             ShowBroadcastPopup(player, targetGalaxy, card);
             return;
@@ -493,7 +494,7 @@ public class TurnFlow : MonoBehaviour
         EventManager.OnDrawCard?.Invoke(c);
 
         if (responser.playerId == 0)
-            _spawn.RemoveCardFromHand_Broadcast();
+            _spawn.RemoveCardFromHand(_game.currentCard);
 
         _ui.UpdateBasePanel(responser.playerId);
         _ui.UpdateBasePanel(_broadcastInitiator.playerId);

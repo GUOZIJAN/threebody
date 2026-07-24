@@ -35,7 +35,7 @@ public class Player : MonoBehaviour
         if (response)
         {
             Debug.Log($"玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
-            return (BroadcastCard)currentCard;
+            return currentCard as BroadcastCard;
         }
         return null;
     }

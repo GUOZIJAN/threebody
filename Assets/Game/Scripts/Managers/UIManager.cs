@@ -38,15 +38,25 @@ public class UIManager : MonoBehaviour
         EventManager.OnTurnStart += ShowFoldCardButton;
         EventManager.OnTurnStart += () => UpdateBasePanel(_game.currentPlayerId);
         EventManager.OnTurnStart += () => UpdateStrikePanel(_game.currentPlayerId);
-        EventManager.OnPlayCard += UpdateBasePanel;
+        EventManager.OnPlayCard += (id, _) => UpdateBasePanel(id);
         EventManager.OnPlayCard += UpdateItemPanel;
-        EventManager.OnPlayCard += (id, card) => FoldCardButton.SetActive(false);
+        EventManager.OnPlayCard += (_, _) => FoldCardButton.SetActive(false);
         EventManager.OnPlayerEliminate += ChangePanelColor;
-        EventManager.OnDrawCard += (card) => UpdateCardCount();
+        EventManager.OnDrawCard += _ => UpdateCardCount();
         EventManager.OnFly += UpdateAfterFly;
         EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelAvailableColor);
         EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelUnavailableColor);
         EventManager.OnGameStart += () => UpdateAllPanels();
+    }
+
+    private void OnDestroy()
+    {
+        EventManager.OnTurnStart -= ShowUseCardButton;
+        EventManager.OnTurnStart -= ShowEndTurnButton;
+        EventManager.OnTurnStart -= ShowFoldCardButton;
+        EventManager.OnPlayCard -= UpdateItemPanel;
+        EventManager.OnPlayerEliminate -= ChangePanelColor;
+        EventManager.OnFly -= UpdateAfterFly;
     }
 
     public void Init()
@@ -132,8 +142,6 @@ public class UIManager : MonoBehaviour
         baseInfo.Find("energy").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
         baseInfo.Find("card").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
     }
-
-    public void UpdateBasePanel(int playerId, Card card) { UpdateBasePanel(playerId); }
 
     public void UpdateItemPanel(int playerId, Card card)
     {
