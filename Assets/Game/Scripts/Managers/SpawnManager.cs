@@ -10,12 +10,10 @@ public class SpawnManager : MonoBehaviour
     public Transform deckPos;
     public List<CardView> handCards;
     public List<Transform> handPoints;
-    public List<Transform> emptyHandPoints;
     public GameObject cardPrefab;
     public GameObject buildPrefab;
     public GameObject HandCardPanel;
 
-    private Sprite cardBackSprite;
     private Dictionary<string,string> cardDesc;
 
     private GameManager _game;
@@ -25,9 +23,8 @@ public class SpawnManager : MonoBehaviour
     {
         Instance = this;
         Services.Register(this);
-        emptyHandPoints = new List<Transform>(handPoints);
         handCards = new List<CardView>();
-        
+
         // 从 Resources/Card.json 加载并解析为字典
         cardDesc = LoadCardDescFromResources("Card");
     }
@@ -80,65 +77,80 @@ public class SpawnManager : MonoBehaviour
 
     public void SpawnCard(Card card)
     {
-        //有空位并且实际手牌小于显示手牌
-        if (emptyHandPoints.Count > 0 && _players.GetPlayer(0).handCards.Count > handCards.Count)
+        if (handCards.Count >= handPoints.Count) return;
+        if (_players.GetPlayer(0).handCards.Count <= handCards.Count) return;
+
+        Transform handPoint = handPoints[handCards.Count];
+        GameObject newCard = Instantiate(cardPrefab, deckPos.position, deckPos.rotation);
+
+        newCard.AddComponent<CardView>();
+
+        newCard.transform.Find("CostText").GetComponent<TextMeshProUGUI>().text = card.cost.ToString();
+        newCard.transform.Find("NameText").GetComponent<TextMeshProUGUI>().text = card.cardname;
+
+        string key = card.cardname;
+        if (card is BroadcastCard bKey)
+            key += bKey.choice.ToString();
+
+        newCard.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = cardDesc[key];
+        newCard.transform.Find("TypeText").GetComponent<TextMeshProUGUI>().text = card.type.ToString();
+        TextMeshProUGUI t = newCard.transform.Find("PowerText").GetComponent<TextMeshProUGUI>();
+        switch (card.type)
         {
-            Transform handPoint = emptyHandPoints[0];
-            emptyHandPoints.RemoveAt(0);
-            GameObject newCard = Instantiate(cardPrefab, deckPos.position, deckPos.rotation);
-
-            newCard.AddComponent<CardView>();
-
-            newCard.transform.Find("CostText").GetComponent<TextMeshProUGUI>().text = card.cost.ToString();
-            newCard.transform.Find("NameText").GetComponent<TextMeshProUGUI>().text = card.cardname;
-            
-            //如果是广播卡，索引需加上BroadcastChoice类型
-            string key = card.cardname;
-            if(card is BroadcastCard bKey)
-            {
-                key += bKey.choice.ToString();
-            }
-
-            //从Resources/Card.json加载的卡牌描述文本
-            newCard.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = cardDesc[key];
-            newCard.transform.Find("TypeText").GetComponent<TextMeshProUGUI>().text = card.type.ToString();
-            TextMeshProUGUI t =  newCard.transform.Find("PowerText").GetComponent<TextMeshProUGUI>();
-            //不同种类 power文本的含义不同
-            switch(card.type)
-            {
-                case CardType.Broadcast:
-                    t.text = (card is BroadcastCard bc) ? bc.distance.ToString() : "";
-                    break;
-                case CardType.Strike:
-                    t.text = (card is StrikeCard sc) ? sc.damage.ToString() : "";
-                    break;
-                case CardType.Build:
-                    t.text = "";
-                    break;
-            }
-
-            //通过卡牌名称 找到背景资源
-            newCard.transform.SetParent(handPoint, false);
-            cardBackSprite = Resources.Load<Sprite>("pic/" + card.cardname);
-            newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = cardBackSprite;
-            CardView cardView = newCard.GetComponent<CardView>();
-            cardView.card = card;
-            handCards.Add(cardView);
-            cardView.FlyToHand(deckPos.position,handPoint.position);
-
-            emptyHandPoints.Remove(handPoint);
+            case CardType.Broadcast:
+                t.text = (card is BroadcastCard bc) ? bc.distance.ToString() : "";
+                break;
+            case CardType.Strike:
+                t.text = (card is StrikeCard sc) ? sc.damage.ToString() : "";
+                break;
+            case CardType.Build:
+                t.text = "";
+                break;
         }
+
+        Sprite bgSprite = Resources.Load<Sprite>("pic/" + card.cardname);
+        newCard.transform.Find("Background").GetComponent<UnityEngine.UI.Image>().sprite = bgSprite;
+        newCard.transform.SetParent(handPoint, false);
+
+        CardView cardView = newCard.GetComponent<CardView>();
+        cardView.card = card;
+        handCards.Add(cardView);
+        cardView.FlyToHand(deckPos.position, handPoint.position);
     }
 
-    public void RemoveCardFromHand(GameObject card)
+    public void RemoveCardFromHand(GameObject card, bool reposition = true)
     {
         if (card == null) return;
         CardView cardView = card.GetComponent<CardView>();
-        if (handCards.Contains(cardView))
+        if (!handCards.Contains(cardView)) return;
+
+        handCards.Remove(cardView);
+        Destroy(card);
+        if (reposition)
+            RepositionHandCards();
+    }
+
+    /// <summary>手牌左对齐：挂到对应 pos 下并滑入归零</summary>
+    public void RepositionHandCards()
+    {
+        for (int i = 0; i < handCards.Count; i++)
         {
-            handCards.Remove(cardView);
-            emptyHandPoints.Add(card.transform.parent);
-            Destroy(card);
+            if (handCards[i] == null) continue;
+            RectTransform rect = handCards[i].GetComponent<RectTransform>();
+
+            // 如果已在正确位置，确保归零后跳过
+            if (rect.parent == handPoints[i])
+            {
+                rect.anchoredPosition = Vector2.zero;
+                continue;
+            }
+
+            // 记录旧世界坐标 → 挂到新 pos 归零 → 反算偏移 → 动画滑入
+            Vector3 oldWorldPos = rect.position;
+            rect.SetParent(handPoints[i], false);
+            Vector2 offset = handPoints[i].GetComponent<RectTransform>().InverseTransformPoint(oldWorldPos);
+            rect.anchoredPosition = offset;
+            rect.DOAnchorPos(Vector2.zero, 0.25f).SetEase(Ease.OutCubic);
         }
     }
 }

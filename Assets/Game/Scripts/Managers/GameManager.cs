@@ -146,25 +146,38 @@ public class GameManager : MonoBehaviour
 
     public void CompleteBroadcast(BroadcastCard card1, BroadcastCard card2, PlayerData player1, PlayerData player2)
     {
+        string n1 = player1.playerId == 0 ? "你" : $"玩家{player1.playerId}";
+        string n2 = player2.playerId == 0 ? "你" : $"玩家{player2.playerId}";
+        string c1 = card1.choice == BroadcastChoice.Cooperate ? "合作" : "欺骗";
+        string c2 = card2.choice == BroadcastChoice.Cooperate ? "合作" : "欺骗";
+
         if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Cooperate)
         {
             player1.energy += 3;
             player2.energy += 3;
-            Debug.Log($"玩家{player1.playerId}和玩家{player2.playerId} 双方获得3点能量");
+            Debug.Log($"{n1}和{n2} 双方合作，各获得3点能量");
+            if (MessageText.Instance != null)
+                MessageText.Instance.Show($"{n1}合作，{n2}合作，双方各获得3点能量", 3f);
         }
         else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Fake)
         {
-            Debug.Log($"玩家{player1.playerId}和玩家{player2.playerId} 双方都选择欺骗，无效果");
+            Debug.Log($"{n1}和{n2} 双方都选择欺骗，无效果");
+            if (MessageText.Instance != null)
+                MessageText.Instance.Show($"{n1}欺骗，{n2}欺骗，双方均无收益", 3f);
         }
         else if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Fake)
         {
             player2.energy += 5;
-            Debug.Log($"玩家{player2.playerId}欺骗成功获得5点能量");
+            Debug.Log($"{n2}欺骗成功获得5点能量");
+            if (MessageText.Instance != null)
+                MessageText.Instance.Show($"{n1}{c1}，{n2}{c2}，{n2}获得5点能量", 3f);
         }
         else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Cooperate)
         {
             player1.energy += 5;
-            Debug.Log($"玩家{player1.playerId}欺骗成功获得5点能量");
+            Debug.Log($"{n1}欺骗成功获得5点能量");
+            if (MessageText.Instance != null)
+                MessageText.Instance.Show($"{n1}{c1}，{n2}{c2}，{n1}获得5点能量", 3f);
         }
     }
 }

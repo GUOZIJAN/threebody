@@ -10,4 +10,5 @@ public static class EventManager
     public static Action OnPlayerChooseBroadcast;
     public static Action AfterPlayerChooseBroadcast;
     public static Action OnGameStart;
+    public static Action<TurnPhase> OnPhaseChanged;
 }

@@ -98,6 +98,7 @@ public class TurnFlow : MonoBehaviour
     private void SetPhase(TurnPhase p)
     {
         Phase = p;
+        EventManager.OnPhaseChanged?.Invoke(p);
     }
 
     // ==================== 公开回调（UI 按钮调用） ====================
@@ -188,9 +189,10 @@ public class TurnFlow : MonoBehaviour
             var cv = go.GetComponent<CardView>();
             pd.handCards.Remove(cv.card);
             _cards.discard.Add(cv.card);
-            _spawn.RemoveCardFromHand(go);
+            _spawn.RemoveCardFromHand(go, reposition: false);
         }
         _foldedCards.Clear();
+        _spawn.RepositionHandCards();
 
         _ui.ExitFoldMode();
         _ui.UpdateBasePanel(0);
@@ -318,6 +320,15 @@ public class TurnFlow : MonoBehaviour
     {
         var ai = _ais[_game.currentPlayerId - 1];
         var pd = ai.data;
+
+        // 如果手牌被外部修改（如广播回应），重设 _aiCardIndex 到有效范围
+        if (pd.handCards.Count == 0)
+        {
+            SetPhase(TurnPhase.TurnEnd);
+            return;
+        }
+        if (_aiCardIndex >= pd.handCards.Count)
+            _aiCardIndex = pd.handCards.Count - 1;
 
         // 从上次位置继续遍历手牌
         bool played = false;
