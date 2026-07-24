@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Mathematics;
-using System.Threading.Tasks;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,7 +10,7 @@ public class GameManager : MonoBehaviour
     public int playerCount = 4;
     public int remainPlayers;
 
-    // 缓存的依赖（通过 Services 获取）
+    // 依赖（通过 Services 获取，部分字段被其他类直接访问）
     public PlayerManager players;
     public GalaxyManager galaxys;
     public ActionManager actions;
@@ -20,8 +18,7 @@ public class GameManager : MonoBehaviour
     public List<AI> ais;
     public Player player;
 
-    private ChoiceManager _choiceManager;
-    private UIManager _uiManager;
+    private TurnFlow _turnFlow;
 
     private void Awake()
     {
@@ -32,13 +29,11 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // 通过 Services 获取依赖
         players  = Services.Get<PlayerManager>();
         galaxys  = Services.Get<GalaxyManager>();
         actions  = Services.Get<ActionManager>();
         cards    = Services.Get<CardManager>();
-        _choiceManager = Services.Get<ChoiceManager>();
-        _uiManager     = Services.Get<UIManager>();
+        _turnFlow = Services.Get<TurnFlow>();
 
         playerCount = players.playerCount;
         remainPlayers = playerCount;
@@ -46,184 +41,82 @@ public class GameManager : MonoBehaviour
         cards.InitDeck();
         players.Init();
         player.Init();
-        _uiManager.Init();
+        Services.Get<UIManager>().Init();
         ais.ForEach(ai => ai.Init());
     }
 
+    /// <summary>玩家点击"开始游戏"，委托给 TurnFlow</summary>
     public void GameStart()
     {
-        state = GameState.Gaming;
-        currentPlayerId = 0;
-        players.HandCardInit();
-        EventManager.OnGameStart?.Invoke();
-        EventManager.OnTurnStart?.Invoke();
+        _turnFlow.StartGame();
     }
 
-    public async Task GameCircle()
-    {
-        while (state != GameState.GameOver)
-        {
-            if(currentPlayerId == 0)
-            {
-                //玩家回合
-                await _choiceManager.PlayerTurnStart();
-            }
-            else
-            {
-                //AI回合
-                await ais[currentPlayerId-1].TurnStart();
-            }
-            NextTurn();
-        }
-        
-    }
-
-    //玩家结束回合时，补牌并触发事件
-    private void EndCurrentTurn(PlayerData player)
-    {
-        EventManager.OnTurnEnd?.Invoke();
-        Debug.Log($"回合结束！当前玩家：{currentPlayerId}");
-    }
-
-    //回合结束，补牌到四张
-    private void DrawHandCardsForCurrentPlayer(PlayerData player)
-    {
-        while(player.handCards.Count < 4)
-        {
-            Card card = cards.Draw();
-            player.handCards.Add(card);
-            EventManager.OnDrawCard?.Invoke(card);
-        }
-        _uiManager.UpdateBasePanel(currentPlayerId);
-    }
-
-    //找到下一个存活的玩家，更新currentPlayerId
-    private void AdvanceToNextAlivePlayer()
-    {
-        do
-        {
-            currentPlayerId = (currentPlayerId + 1) % playerCount;
-        } while (!players.Players[currentPlayerId].isAlive);
-    }
-
-    //主要是生产能量和触发回合开始事件
-    private void ResolveTurnStartEffects(PlayerData player)
-    {
-        int produceTotal = 1;  //每回合基础产能1点
-        foreach (var build in player.buildCards)
-        {
-            // 戴森球/太阳能阵列需要恒星才能产能量
-            if (build.needSun && !galaxys.GetGalaxy(player.galaxyId).haveSun)
-                continue;
-            produceTotal += build.produce;
-        }
-        player.energy += produceTotal;
-        EventManager.OnTurnStart?.Invoke();
-        Debug.Log($"玩家{currentPlayerId}回合开始,生产能量{produceTotal},当前能量：{player.energy}");
-    }
-
-    private void CheckStrike(int nowPlayer)
-    {
-        //中途会发生修改
-        for (int i = actions.strikeList.Count - 1; i >= 0; i--)
-        {
-            StrikeInfo strike = actions.strikeList[i];
-            if (strike.attackerId == nowPlayer)
-            {
-                strike.remainSteps--;
-            }
-            if (strike.remainSteps == 0)
-            {
-                RunStrike(strike);
-                actions.strikeList.Remove(strike);
-            }
-        }
-    }
-
-    public void NextTurn()
-    {
-        PlayerData currentPlayer = players.GetPlayer(currentPlayerId);
-        EndCurrentTurn(currentPlayer);
-        DrawHandCardsForCurrentPlayer(currentPlayer);
-        AdvanceToNextAlivePlayer();
-        currentPlayer = players.GetPlayer(currentPlayerId);
-        CheckStrike(currentPlayerId);
-        ResolveTurnStartEffects(currentPlayer);
-    }
-
-    private void ApplyStrikeToGalaxy(StrikeInfo strike, Galaxy target)
-    {
-        //检查是否摧毁恒星或星系
-        if(strike.effect==StrikeEffect.DestroySun || strike.effect == StrikeEffect.DestroySunAndBuild)
-        {
-            target.haveSun = false;
-        }
-        else if (strike.effect == StrikeEffect.DestroyAll)
-        {
-            target.haveSun = false;                
-            target.isAlive = false;
-        }
-    }
-
-    //打击作用于玩家，返回值为是否被消灭
-    private bool ApplyStrikeToPlayer(StrikeInfo strike, PlayerData targetPlayer)
-    {
-        switch (strike.effect)
-        {
-            case StrikeEffect.DestroySunAndBuild :
-                targetPlayer.buildCards.Clear();
-                break;
-
-            case StrikeEffect.DestroyHand :
-                targetPlayer.handCards.Clear();
-                break;
-
-            case StrikeEffect.DestroyAll :
-                targetPlayer.buildCards.Clear();
-                targetPlayer.handCards.Clear();
-                return true;    
-        }
-
-        int maxDenfense = 0;
-        //检查是否会被消灭
-        foreach(var build in targetPlayer.buildCards)
-        {
-            maxDenfense = math.max(maxDenfense,build.defense);
-        }
-
-        return maxDenfense < strike.damage;
-    }
-
-    private void HandleStrikeElimination(StrikeInfo strike, PlayerData targetPlayer)
-    {
-        if (ApplyStrikeToPlayer(strike, targetPlayer))
-        {
-            targetPlayer.isAlive = false;
-            //打击者获得能量
-            remainPlayers--;
-            players.GetPlayer(strike.attackerId).energy += remainPlayers * 3;
-            galaxys.GetGalaxy(targetPlayer.galaxyId).ownerPlayerId = -1;
-            EventManager.OnPlayerEliminate?.Invoke(targetPlayer.playerId);
-            Debug.Log($"玩家{targetPlayer.playerId}被打击淘汰！");
-        }
-    }
+    // ==================== 打击结算 ====================
 
     public void RunStrike(StrikeInfo strike)
     {
         Galaxy target = galaxys.GetGalaxy(strike.targetGalaxyId);
         ApplyStrikeToGalaxy(strike, target);
-        //打击星系有玩家
+
         if (target.ownerPlayerId != -1)
         {
             PlayerData targetPlayer = players.GetPlayer(target.ownerPlayerId);
-            bool isEliminated = ApplyStrikeToPlayer(strike, targetPlayer);
-            if (isEliminated)
+            if (ApplyStrikeToPlayer(strike, targetPlayer))
             {
                 HandleStrikeElimination(strike, targetPlayer);
                 GameOver();
             }
         }
     }
+
+    private void ApplyStrikeToGalaxy(StrikeInfo strike, Galaxy target)
+    {
+        if (strike.effect == StrikeEffect.DestroySun
+         || strike.effect == StrikeEffect.DestroySunAndBuild)
+        {
+            target.haveSun = false;
+        }
+        else if (strike.effect == StrikeEffect.DestroyAll)
+        {
+            target.haveSun = false;
+            target.isAlive = false;
+        }
+    }
+
+    private bool ApplyStrikeToPlayer(StrikeInfo strike, PlayerData targetPlayer)
+    {
+        switch (strike.effect)
+        {
+            case StrikeEffect.DestroySunAndBuild:
+                targetPlayer.buildCards.Clear();
+                break;
+            case StrikeEffect.DestroyHand:
+                targetPlayer.handCards.Clear();
+                break;
+            case StrikeEffect.DestroyAll:
+                targetPlayer.buildCards.Clear();
+                targetPlayer.handCards.Clear();
+                return true;
+        }
+
+        int maxDefense = 0;
+        foreach (var build in targetPlayer.buildCards)
+            maxDefense = Mathf.Max(maxDefense, build.defense);
+
+        return maxDefense < strike.damage;
+    }
+
+    private void HandleStrikeElimination(StrikeInfo strike, PlayerData targetPlayer)
+    {
+        targetPlayer.isAlive = false;
+        remainPlayers--;
+        players.GetPlayer(strike.attackerId).energy += remainPlayers * 3;
+        galaxys.GetGalaxy(targetPlayer.galaxyId).ownerPlayerId = -1;
+        EventManager.OnPlayerEliminate?.Invoke(targetPlayer.playerId);
+        Debug.Log($"玩家{targetPlayer.playerId}被打击淘汰！");
+    }
+
+    // ==================== 胜负判定 ====================
 
     private bool IsLastPlayerWin()
     {
@@ -251,10 +144,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // ==================== 广播结算 ====================
 
-    public void CompleteBroadcast(BroadcastCard card1, BroadcastCard card2,PlayerData player1, PlayerData player2)
+    public void CompleteBroadcast(BroadcastCard card1, BroadcastCard card2, PlayerData player1, PlayerData player2)
     {
-        //根据玩家选择的响应结果，处理广播效果
         if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Cooperate)
         {
             player1.energy += 3;
@@ -263,7 +156,6 @@ public class GameManager : MonoBehaviour
         }
         else if (card1.choice == BroadcastChoice.Fake && card2.choice == BroadcastChoice.Fake)
         {
-            //都不响应，无效果
             Debug.Log($"玩家{player1.playerId}和玩家{player2.playerId} 双方都选择欺骗，无效果");
         }
         else if (card1.choice == BroadcastChoice.Cooperate && card2.choice == BroadcastChoice.Fake)
@@ -278,5 +170,3 @@ public class GameManager : MonoBehaviour
         }
     }
 }
-
-    

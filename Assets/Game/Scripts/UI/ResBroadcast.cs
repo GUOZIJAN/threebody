@@ -13,14 +13,13 @@ public class ResBroadcast : PopupBase<bool>
 
     private void Awake()
     {
-        _player = Player.Instance;
-
         YesButton.onClick.AddListener(() => CheckClose(true));
         NoButton.onClick.AddListener(() => CheckClose(false));
     }
 
     private void Start()
     {
+        _player   = Services.Get<Player>();
         _galaxies = Services.Get<GalaxyManager>();
     }
 

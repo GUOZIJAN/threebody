@@ -1,21 +1,21 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-class GalaxyOnClick : MonoBehaviour, IPointerClickHandler
+public class GalaxyOnClick : MonoBehaviour, IPointerClickHandler
 {
     public int id;
 
-    private ChoiceManager _choice;
+    private TurnFlow _turnFlow;
     private GalaxyManager _galaxies;
 
     private void Start()
     {
-        _choice   = Services.Get<ChoiceManager>();
+        _turnFlow = Services.Get<TurnFlow>();
         _galaxies = Services.Get<GalaxyManager>();
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        _choice.OnGalaxySelected(_galaxies.GetGalaxy(id));
+        _turnFlow.OnGalaxyClicked(_galaxies.GetGalaxy(id));
     }
 }
