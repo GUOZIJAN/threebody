@@ -164,6 +164,16 @@ public class UIManager : MonoBehaviour
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
     }
 
+    /// <summary>清空玩家的建筑列表面板</summary>
+    public void ClearBuildPanel(int playerId)
+    {
+        Transform buildPanel = PlayerPanels[playerId].transform.Find("Build_list");
+        if (buildPanel == null) return;
+        ScrollRect scrollRect = buildPanel.GetComponent<ScrollRect>();
+        foreach (Transform child in scrollRect.content)
+            Destroy(child.gameObject);
+    }
+
     public void UpdateStrikePanel(int playerId)
     {
         GameObject targetPanel = PlayerPanels[playerId];

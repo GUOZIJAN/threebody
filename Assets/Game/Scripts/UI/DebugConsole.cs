@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using TMPro;
 
@@ -109,18 +108,34 @@ public class DebugConsole : MonoBehaviour
 
     // ==================== 指令实现 ====================
 
-    /// <summary>give &lt;playerId&gt; &lt;cardName&gt; — 替换玩家最右侧手牌</summary>
+    /// <summary>give &lt;playerId&gt; &lt;cardName&gt; [cooperate|fake] — 替换玩家最右侧手牌</summary>
     private void CmdGive(string[] parts)
     {
-        if (parts.Length < 3) { Log("用法: give <playerId> <cardName>"); return; }
+        if (parts.Length < 3) { Log("用法: give <playerId> <cardName> [cooperate|fake]"); return; }
         if (!int.TryParse(parts[1], out int playerId)) { Log($"无效玩家ID: {parts[1]}"); return; }
 
         var pd = _players.GetPlayer(playerId);
         if (pd == null) { Log($"玩家{playerId}不存在"); return; }
 
         string cardName = parts[2];
-        Card card = FindCard(cardName);
-        if (card == null) { Log($"未找到卡牌: {cardName}"); return; }
+        BroadcastChoice? choice = null;
+        if (parts.Length >= 4)
+        {
+            if (parts[3].ToLower() == "cooperate" || parts[3].ToLower() == "合作")
+                choice = BroadcastChoice.Cooperate;
+            else if (parts[3].ToLower() == "fake" || parts[3].ToLower() == "欺骗")
+                choice = BroadcastChoice.Fake;
+            else
+                { Log($"无效选项: {parts[3]}，应为 cooperate 或 fake"); return; }
+        }
+
+        Card card = FindCard(cardName, choice);
+        if (card == null)
+        {
+            string extra = choice.HasValue ? $"({choice})" : "";
+            Log($"未找到卡牌: {cardName}{extra}");
+            return;
+        }
 
         // 移除最右侧牌（数据）
         if (pd.handCards.Count > 0)
@@ -209,41 +224,56 @@ public class DebugConsole : MonoBehaviour
 
         int count = pd.buildCards.Count;
         pd.buildCards.Clear();
+        _ui.ClearBuildPanel(playerId);
         _ui.UpdateBasePanel(playerId);
         Log($"摧毁玩家{playerId}的{count}个建筑");
     }
 
-    /// <summary>debug — 输出所有玩家信息到控制台</summary>
+    /// <summary>debug — 输出所有玩家信息</summary>
     private void CmdDebug()
     {
+        var sb = new System.Text.StringBuilder();
         foreach (var pd in _players.Players)
         {
             Galaxy g = _galaxies.GetGalaxy(pd.galaxyId);
-            string info = $"[Debug] 玩家{pd.playerId}: ";
-            info += pd.isAlive ? "存活" : "已淘汰";
-            info += $", 能量={pd.energy}, 手牌={pd.handCards.Count}, 建筑={pd.buildCards.Count}";
-            info += $", 星系{pd.galaxyId}";
-            if (!g.isAlive) info += "(已摧毁)";
-            if (!g.haveSun) info += "(无阳光)";
-            Debug.Log(info);
+            sb.Append($"玩家{pd.playerId}|");
+            sb.Append(pd.isAlive ? "存活" : "已淘汰");
+            sb.Append($" | 能量={pd.energy} | 手牌={pd.handCards.Count} | 建筑={pd.buildCards.Count}");
+            sb.Append($" | 星系{pd.galaxyId}");
+            if (!g.isAlive) sb.Append("(已摧毁)");
+            if (!g.haveSun) sb.Append("(无阳光)");
+            sb.AppendLine();
         }
-        Log("已输出所有玩家信息到 Console");
+        string result = sb.ToString().TrimEnd();
+        Debug.Log($"[Console]\n{result}");
+        Log(result);
     }
 
     // ==================== 辅助 ====================
 
-    /// <summary>在牌堆、弃牌堆、已用广播中搜索卡牌（不偷其他玩家的手牌）</summary>
-    private Card FindCard(string cardName)
+    /// <summary>在牌堆、弃牌堆、已用广播中搜索卡牌</summary>
+    private Card FindCard(string cardName, BroadcastChoice? choice = null)
     {
-        Card match = _cards.deck.FirstOrDefault(c => c.cardname == cardName);
+        Card match = SearchInList(_cards.deck, cardName, choice);
         if (match != null) { _cards.deck.Remove(match); return match; }
 
-        match = _cards.discard.FirstOrDefault(c => c.cardname == cardName);
+        match = SearchInList(_cards.discard, cardName, choice);
         if (match != null) { _cards.discard.Remove(match); return match; }
 
-        match = _cards.broadcastUsed.FirstOrDefault(c => c.cardname == cardName);
+        match = SearchInList(_cards.broadcastUsed, cardName, choice);
         if (match != null) { _cards.broadcastUsed.Remove(match); return match; }
 
+        return null;
+    }
+
+    private Card SearchInList(System.Collections.Generic.List<Card> list, string cardName, BroadcastChoice? choice)
+    {
+        foreach (var c in list)
+        {
+            if (c.cardname != cardName) continue;
+            if (c is BroadcastCard bc && choice.HasValue && bc.choice != choice.Value) continue;
+            return c;
+        }
         return null;
     }
 
