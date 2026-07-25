@@ -436,6 +436,19 @@ public class TurnFlow : MonoBehaviour
         _broadcastCard = card;
         _broadcastInitiator = player;
 
+        // 检查目标星系上的玩家是否必须回应
+        bool forceHumanRespond = false;
+        if (targetGalaxy.ownerPlayerId != -1 && targetGalaxy.ownerPlayerId != player.playerId)
+        {
+            PlayerData targetOwner = _players.GetPlayer(targetGalaxy.ownerPlayerId);
+            if (targetOwner.isAlive && CanPlayerRespond(targetOwner, targetGalaxy))
+            {
+                if (targetOwner.playerId == 0)
+                    forceHumanRespond = true;
+                // AI 在目标星系上：ai.Respond 总会返回可用卡，自动强制回应
+            }
+        }
+
         // 收集 AI 回应（同步）
         foreach (var ai in _ais)
         {
@@ -449,18 +462,31 @@ public class TurnFlow : MonoBehaviour
         if (player.playerId != 0 && _players.GetPlayer(0).isAlive)
         {
             SetPhase(TurnPhase.WaitingBroadcastRespond);
-            ShowBroadcastPopup(player, targetGalaxy, card);
+            ShowBroadcastPopup(player, targetGalaxy, card, forceHumanRespond);
             return;
         }
 
         ContinueBroadcastResolution();
     }
 
-    private async void ShowBroadcastPopup(PlayerData raiser, Galaxy galaxy, BroadcastCard card)
+    /// <summary>检查玩家是否有能力回应广播（手牌中有可用的广播卡）</summary>
+    private bool CanPlayerRespond(PlayerData pd, Galaxy targetGalaxy)
+    {
+        foreach (var c in pd.handCards)
+        {
+            if (c is BroadcastCard bc
+                && pd.energy >= bc.cost
+                && _galaxies.GetDistance(pd.galaxyId, targetGalaxy.id) <= bc.distance)
+                return true;
+        }
+        return false;
+    }
+
+    private async void ShowBroadcastPopup(PlayerData raiser, Galaxy galaxy, BroadcastCard card, bool forceRespond = false)
     {
         try
         {
-            var response = await _player.Respond(raiser, galaxy, card);
+            var response = await _player.Respond(raiser, galaxy, card, forceRespond);
             OnBroadcastPopupClosed(response != null);
         }
         catch (Exception e)

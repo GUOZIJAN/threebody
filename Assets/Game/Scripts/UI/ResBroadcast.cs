@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,7 @@ public class ResBroadcast : PopupBase<bool>
     public Button NoButton;
     public TextMeshProUGUI BroadcastText;
     public Galaxy galaxy;
+    public bool ForceRespond { get; set; }
 
     private Player _player;
     private GalaxyManager _galaxies;
@@ -27,6 +29,11 @@ public class ResBroadcast : PopupBase<bool>
     {
         if (result == false)
         {
+            if (ForceRespond)
+            {
+                Debug.LogWarning("你所在星系被广播，必须回应！");
+                return;
+            }
             Debug.Log($"玩家{_player.data.playerId}拒绝响应广播卡");
             Close(false);
         }
@@ -56,5 +63,11 @@ public class ResBroadcast : PopupBase<bool>
                 Debug.LogWarning("玩家当前选择的不是广播卡，无法响应广播卡");
             }
         }
+    }
+
+    public override async Task<bool> ShowAsync()
+    {
+        NoButton.gameObject.SetActive(!ForceRespond);
+        return await base.ShowAsync();
     }
 }

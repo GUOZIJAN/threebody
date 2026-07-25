@@ -27,10 +27,13 @@ public class Player : MonoBehaviour
         Debug.Log($"玩家初始化完成");
     }
 
-    async public Task<BroadcastCard> Respond(PlayerData raiser,Galaxy galaxy,BroadcastCard card)
+    async public Task<BroadcastCard> Respond(PlayerData raiser, Galaxy galaxy, BroadcastCard card, bool forceRespond = false)
     {
-        resBroadcast.BroadcastText.text = $"玩家{raiser.playerId}在星系{galaxy.id}使用了广播卡{card.cardname}，是否响应？";
+        resBroadcast.BroadcastText.text = forceRespond
+            ? $"玩家{raiser.playerId}在你的星系{galaxy.id}使用了广播卡{card.cardname}，你必须回应！"
+            : $"玩家{raiser.playerId}在星系{galaxy.id}使用了广播卡{card.cardname}，是否响应？";
         resBroadcast.galaxy = galaxy;
+        resBroadcast.ForceRespond = forceRespond;
         bool response = await resBroadcast.ShowAsync();
         if (response)
         {
