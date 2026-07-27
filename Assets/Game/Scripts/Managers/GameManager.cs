@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,6 +20,7 @@ public class GameManager : MonoBehaviour
     public Player player;
 
     private TurnFlow _turnFlow;
+    private RectTransform _canvasRect;
 
     private void Awake()
     {
@@ -29,11 +31,16 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        players  = Services.Get<PlayerManager>();
-        galaxys  = Services.Get<GalaxyManager>();
-        actions  = Services.Get<ActionManager>();
-        cards    = Services.Get<CardManager>();
-        _turnFlow = Services.Get<TurnFlow>();
+        players   = Services.Get<PlayerManager>();
+        galaxys   = Services.Get<GalaxyManager>();
+        actions   = Services.Get<ActionManager>();
+        cards     = Services.Get<CardManager>();
+        _turnFlow  = Services.Get<TurnFlow>();
+        var shakeRoot = GameObject.Find("ShakeContainer");
+        if (shakeRoot != null)
+            _canvasRect = shakeRoot.GetComponent<RectTransform>();
+        else
+            _canvasRect = FindObjectOfType<Canvas>()?.GetComponent<RectTransform>();
 
         playerCount = players.playerCount;
         remainPlayers = playerCount;
@@ -58,6 +65,7 @@ public class GameManager : MonoBehaviour
         Galaxy target = galaxys.GetGalaxy(strike.targetGalaxyId);
         ApplyStrikeToGalaxy(strike, target);
 
+        bool eliminated = false;
         if (target.ownerPlayerId != -1)
         {
             PlayerData targetPlayer = players.GetPlayer(target.ownerPlayerId);
@@ -65,7 +73,15 @@ public class GameManager : MonoBehaviour
             {
                 HandleStrikeElimination(strike, targetPlayer);
                 GameOver();
+                eliminated = true;
             }
+        }
+
+        // 屏幕震动：摇 Canvas 的 localPosition（Overlay 模式下 anchoredPosition 会被覆盖）
+        if (_canvasRect != null)
+        {
+            float strength = eliminated ? 12f : 6f;
+            _canvasRect.DOShakePosition(0.35f, strength, 20, 90f).SetEase(Ease.OutQuad);
         }
     }
 
