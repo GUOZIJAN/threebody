@@ -66,6 +66,13 @@ public class AI : MonoBehaviour
     /// <summary>决定是否回应他人的广播（同步）</summary>
     public BroadcastCard Respond(PlayerData raiser, Galaxy galaxy, BroadcastCard card)
     {
+        // 监听基地：所在星系被广播时可选择不回应
+        if (galaxy.ownerPlayerId == data.playerId && HasNoReplyBuilding())
+        {
+            Debug.Log($"AI玩家{data.playerId}拥有监听基地，拒绝回应玩家{raiser.playerId}的广播");
+            return null;
+        }
+
         foreach (var handCard in data.handCards)
         {
             if (handCard is BroadcastCard handBroadcast
@@ -78,5 +85,15 @@ public class AI : MonoBehaviour
         }
         Debug.Log($"AI玩家{data.playerId}没有响应玩家{raiser.playerId}的广播卡{card.cardname}");
         return null;
+    }
+
+    private bool HasNoReplyBuilding()
+    {
+        foreach (var build in data.buildCards)
+        {
+            if (build.effect == BuildEffect.NoReply)
+                return true;
+        }
+        return false;
     }
 }

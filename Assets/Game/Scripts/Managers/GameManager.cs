@@ -107,7 +107,7 @@ public class GameManager : MonoBehaviour
                 targetPlayer.buildCards.Clear();
                 break;
             case StrikeEffect.DestroyHand:
-                targetPlayer.handCards.Clear();
+                targetPlayer.handCards.RemoveAll(c => c is BuildCard);
                 break;
             case StrikeEffect.DestroyAll:
                 targetPlayer.buildCards.Clear();

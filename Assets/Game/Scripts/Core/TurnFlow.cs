@@ -443,9 +443,11 @@ public class TurnFlow : MonoBehaviour
             PlayerData targetOwner = _players.GetPlayer(targetGalaxy.ownerPlayerId);
             if (targetOwner.isAlive && CanPlayerRespond(targetOwner, targetGalaxy))
             {
-                if (targetOwner.playerId == 0)
+                // 监听基地：所在星系被广播时可选择不回应
+                bool hasNoReply = HasNoReplyBuilding(targetOwner);
+                if (targetOwner.playerId == 0 && !hasNoReply)
                     forceHumanRespond = true;
-                // AI 在目标星系上：ai.Respond 总会返回可用卡，自动强制回应
+                // AI 在目标星系上且没有 NoReply：ai.Respond 总会返回可用卡，自动强制回应
             }
         }
 
@@ -477,6 +479,17 @@ public class TurnFlow : MonoBehaviour
             if (c is BroadcastCard bc
                 && pd.energy >= bc.cost
                 && _galaxies.GetDistance(pd.galaxyId, targetGalaxy.id) <= bc.distance)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>检查玩家是否拥有监听基地（NoReply 建筑），可豁免强制广播回应</summary>
+    private bool HasNoReplyBuilding(PlayerData pd)
+    {
+        foreach (var build in pd.buildCards)
+        {
+            if (build.effect == BuildEffect.NoReply)
                 return true;
         }
         return false;
