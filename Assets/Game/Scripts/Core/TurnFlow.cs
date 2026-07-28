@@ -43,6 +43,7 @@ public class TurnFlow : MonoBehaviour
     private float        _aiDelayTimer;
     private PlayerData   _broadcastInitiator;
     private BroadcastCard _broadcastCard;
+    private bool         _broadcastAnimPlayed;
     private List<GameObject> _foldedCards = new();
 
     // ==================== 初始化 ====================
@@ -193,19 +194,36 @@ public class TurnFlow : MonoBehaviour
         if (Phase != TurnPhase.FoldingCards) return;
 
         var pd = _players.GetPlayer(0);
+
+        // 数据层：移除手牌 + 加入弃牌堆
+        var cardsToAnimate = new List<GameObject>();
         foreach (var go in _foldedCards)
         {
             var cv = go.GetComponent<CardView>();
             pd.handCards.Remove(cv.card);
             _cards.discard.Add(cv.card);
-            _spawn.RemoveCardFromHand(go, reposition: false);
+            CardAnimator.Instance.DetachFromHand(go);
+            cardsToAnimate.Add(go);
         }
         _foldedCards.Clear();
-        _spawn.RepositionHandCards();
 
         _ui.ExitFoldMode();
         _ui.UpdateBasePanel(0);
-        SetPhase(TurnPhase.TurnEnd);
+
+        // 批量弃置动画，完成后重排手牌并进入 TurnEnd
+        if (cardsToAnimate.Count > 0)
+        {
+            CardAnimator.Instance.AnimateDiscardSequence(cardsToAnimate, isPlayer: true, onComplete: () =>
+            {
+                _spawn.RepositionHandCards();
+                SetPhase(TurnPhase.TurnEnd);
+            });
+        }
+        else
+        {
+            _spawn.RepositionHandCards();
+            SetPhase(TurnPhase.TurnEnd);
+        }
     }
 
     /// <summary>弃牌模式：选/取消一张牌</summary>
@@ -460,11 +478,15 @@ public class TurnFlow : MonoBehaviour
                 _actions.BroadcastRes[ai.data.playerId] = response;
         }
 
-        // 如果 AI 是广播发起者，且人类存活 → 需要人类弹窗回应
+        // 如果 AI 是广播发起者，且人类存活 → 先播动画，再弹窗
         if (player.playerId != 0 && _players.GetPlayer(0).isAlive)
         {
-            SetPhase(TurnPhase.WaitingBroadcastRespond);
-            ShowBroadcastPopup(player, targetGalaxy, card, forceHumanRespond);
+            _broadcastAnimPlayed = true;
+            CardAnimator.Instance.AnimateAIUse(card, player.playerId, onComplete: () =>
+            {
+                SetPhase(TurnPhase.WaitingBroadcastRespond);
+                ShowBroadcastPopup(player, targetGalaxy, card, forceHumanRespond);
+            });
             return;
         }
 
@@ -535,7 +557,11 @@ public class TurnFlow : MonoBehaviour
             ResolveBroadcast_AI();
         }
 
-        EventManager.OnPlayCard?.Invoke(_game.currentPlayerId, _broadcastCard);
+        if (!_broadcastAnimPlayed)
+        {
+            EventManager.OnPlayCard?.Invoke(_game.currentPlayerId, _broadcastCard);
+        }
+        _broadcastAnimPlayed = false;
         RemoveCurrentCardFromHand();
         CleanupAfterCard();
     }
@@ -562,8 +588,14 @@ public class TurnFlow : MonoBehaviour
         responser.handCards.Add(c);
         EventManager.OnDrawCard?.Invoke(c);
 
-        if (responser.playerId == 0)
-            _spawn.RemoveCardFromHand(_game.currentCard);
+        if (responser.playerId == 0 && _game.currentCard != null)
+        {
+            CardAnimator.Instance.DetachFromHand(_game.currentCard);
+            CardAnimator.Instance.AnimatePlayerUse(_game.currentCard, onComplete: () =>
+            {
+                _spawn.RepositionHandCards();
+            });
+        }
 
         _ui.UpdateBasePanel(responser.playerId);
         _ui.UpdateBasePanel(_broadcastInitiator.playerId);

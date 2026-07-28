@@ -69,11 +69,41 @@ public class GameManager : MonoBehaviour
         if (target.ownerPlayerId != -1)
         {
             PlayerData targetPlayer = players.GetPlayer(target.ownerPlayerId);
+
+            // 动画：收集将被摧毁的建筑列表项
+            bool clearsBuilds = strike.effect == StrikeEffect.DestroySunAndBuild
+                             || strike.effect == StrikeEffect.DestroyAll;
+            var buildItems = clearsBuilds
+                ? Services.Get<UIManager>().GetBuildPanelItems(targetPlayer.playerId)
+                : null;
+
+            // 动画：收集将被弃置的建造手牌（科技锁死）
+            bool discardsBuilds = strike.effect == StrikeEffect.DestroyHand
+                               || strike.effect == StrikeEffect.DestroyAll;
+            List<GameObject> discardCards = null;
+            if (discardsBuilds && targetPlayer.playerId == 0)
+                discardCards = CardAnimator.Instance.FindHandCardsOfType<BuildCard>();
+
             if (ApplyStrikeToPlayer(strike, targetPlayer))
             {
                 HandleStrikeElimination(strike, targetPlayer);
                 GameOver();
                 eliminated = true;
+            }
+
+            // 播放建筑摧毁动画
+            if (buildItems != null && buildItems.Count > 0)
+                CardAnimator.Instance.AnimateBuildsDestroyed(buildItems);
+
+            // 播放手牌弃置动画（科技锁死），完成后重排手牌
+            if (discardCards != null && discardCards.Count > 0)
+            {
+                foreach (var obj in discardCards)
+                    CardAnimator.Instance.DetachFromHand(obj);
+                CardAnimator.Instance.AnimateDiscardSequence(discardCards, isPlayer: true, onComplete: () =>
+                {
+                    Services.Get<SpawnManager>().RepositionHandCards();
+                });
             }
         }
 
@@ -87,16 +117,23 @@ public class GameManager : MonoBehaviour
 
     private void ApplyStrikeToGalaxy(StrikeInfo strike, Galaxy target)
     {
+        bool changed = false;
+
         if (strike.effect == StrikeEffect.DestroySun
          || strike.effect == StrikeEffect.DestroySunAndBuild)
         {
             target.haveSun = false;
+            changed = true;
         }
         else if (strike.effect == StrikeEffect.DestroyAll)
         {
             target.haveSun = false;
             target.isAlive = false;
+            changed = true;
         }
+
+        if (changed)
+            EventManager.OnGalaxyStateChanged?.Invoke(target.id);
     }
 
     private bool ApplyStrikeToPlayer(StrikeInfo strike, PlayerData targetPlayer)

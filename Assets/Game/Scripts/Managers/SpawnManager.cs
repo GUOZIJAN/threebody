@@ -63,9 +63,23 @@ public class SpawnManager : MonoBehaviour
 
     private void OnPlayCardHandler(int playerId, Card card)
     {
-        // 仅当人类玩家打出卡牌时才移除视觉手牌
-        if (playerId == 0 && _game.currentCard != null)
-            RemoveCardFromHand(_game.currentCard);
+        if (playerId == 0)
+        {
+            // 玩家卡牌：使用动画完成后才重排手牌，避免动画重叠
+            if (_game.currentCard != null)
+            {
+                CardAnimator.Instance.DetachFromHand(_game.currentCard);
+                CardAnimator.Instance.AnimatePlayerUse(_game.currentCard, onComplete: () =>
+                {
+                    RepositionHandCards();
+                });
+            }
+        }
+        else
+        {
+            // AI 卡牌：生成临时卡牌动画
+            CardAnimator.Instance.AnimateAIUse(card, playerId);
+        }
     }
 
     private void OnEnable()
@@ -123,16 +137,26 @@ public class SpawnManager : MonoBehaviour
         cardView.FlyToHand(deckPos.position, handPoint.position);
     }
 
-    public void RemoveCardFromHand(GameObject card, bool reposition = true)
+    public void RemoveCardFromHand(GameObject card, bool reposition = true, bool destroy = true)
     {
         if (card == null) return;
         CardView cardView = card.GetComponent<CardView>();
         if (!handCards.Contains(cardView)) return;
 
         handCards.Remove(cardView);
-        Destroy(card);
+        if (destroy) Destroy(card);
         if (reposition)
             RepositionHandCards();
+    }
+
+    /// <summary>获取卡牌描述文本（供 CardAnimator 等外部使用）</summary>
+    public string GetCardDescription(Card card)
+    {
+        string key = card.cardname;
+        if (card is BroadcastCard bc)
+            key += bc.choice.ToString();
+        cardDesc.TryGetValue(key, out var desc);
+        return desc ?? "";
     }
 
     /// <summary>手牌左对齐：挂到对应 pos 下并滑入归零</summary>

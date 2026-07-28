@@ -164,7 +164,27 @@ public class UIManager : MonoBehaviour
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
     }
 
-    /// <summary>清空玩家的建筑列表面板</summary>
+    /// <summary>获取玩家面板的世界坐标（供 CardAnimator 使用）</summary>
+    public Vector3 GetPlayerPanelPosition(int playerId)
+    {
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return Vector3.zero;
+        return PlayerPanels[playerId].transform.position;
+    }
+
+    /// <summary>获取玩家建筑列表中的所有 GameObject</summary>
+    public List<GameObject> GetBuildPanelItems(int playerId)
+    {
+        var items = new List<GameObject>();
+        Transform buildPanel = PlayerPanels[playerId].transform.Find("Build_list");
+        if (buildPanel == null) return items;
+
+        ScrollRect scrollRect = buildPanel.GetComponent<ScrollRect>();
+        foreach (Transform child in scrollRect.content)
+            items.Add(child.gameObject);
+        return items;
+    }
+
+    /// <summary>清除建筑面板（不带动画）</summary>
     public void ClearBuildPanel(int playerId)
     {
         Transform buildPanel = PlayerPanels[playerId].transform.Find("Build_list");
