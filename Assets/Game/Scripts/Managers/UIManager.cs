@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI CardCountText;
     public TextMeshProUGUI PlayerGalaxyText;
     public List<GameObject> PlayerPanels;
+    public GamePopup GamePopup;
 
     // 缓存的依赖
     private TurnFlow _turnFlow;
@@ -28,25 +29,48 @@ public class UIManager : MonoBehaviour
     private Color PanelAvailableColor   = new Color32(95, 255, 0, 100);
     private Color PanelUnavailableColor = new Color32(255, 255, 255, 100);
 
+    // ==================== 存储 lambda 委托，确保 OnDestroy 能正确取消订阅 ====================
+    private System.Action _onTurnStartUpdateBasePanel;
+    private System.Action _onTurnStartUpdateStrikePanel;
+    private System.Action<int, Card> _onPlayCardUpdateBasePanel;
+    private System.Action<int, Card> _onPlayCardHideFoldButton;
+    private System.Action<Card> _onDrawCardUpdateCount;
+    private System.Action _onPlayerChooseBroadcastHandler;
+    private System.Action _onAfterPlayerChooseBroadcastHandler;
+    private System.Action _onGameStartUpdateAllPanels;
+    private System.Action<int> _onGameOverHandler;
+
     private void Awake()
     {
         Instance = this;
         Services.Register(this);
 
+        // 创建并存储所有委托（避免匿名 lambda 无法在 OnDestroy 中取消订阅）
+        _onTurnStartUpdateBasePanel       = () => UpdateBasePanel(_game.currentPlayerId);
+        _onTurnStartUpdateStrikePanel     = () => UpdateStrikePanel(_game.currentPlayerId);
+        _onPlayCardUpdateBasePanel        = (id, _) => UpdateBasePanel(id);
+        _onPlayCardHideFoldButton         = (_, _) => FoldCardButton.SetActive(false);
+        _onDrawCardUpdateCount            = _ => UpdateCardCount();
+        _onPlayerChooseBroadcastHandler   = () => ChangePlayerPanelColor(PanelAvailableColor);
+        _onAfterPlayerChooseBroadcastHandler = () => ChangePlayerPanelColor(PanelUnavailableColor);
+        _onGameStartUpdateAllPanels       = () => UpdateAllPanels();
+        _onGameOverHandler                = OnGameOver;
+
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
         EventManager.OnTurnStart += ShowFoldCardButton;
-        EventManager.OnTurnStart += () => UpdateBasePanel(_game.currentPlayerId);
-        EventManager.OnTurnStart += () => UpdateStrikePanel(_game.currentPlayerId);
-        EventManager.OnPlayCard += (id, _) => UpdateBasePanel(id);
+        EventManager.OnTurnStart += _onTurnStartUpdateBasePanel;
+        EventManager.OnTurnStart += _onTurnStartUpdateStrikePanel;
+        EventManager.OnPlayCard += _onPlayCardUpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
-        EventManager.OnPlayCard += (_, _) => FoldCardButton.SetActive(false);
+        EventManager.OnPlayCard += _onPlayCardHideFoldButton;
         EventManager.OnPlayerEliminate += ChangePanelColor;
-        EventManager.OnDrawCard += _ => UpdateCardCount();
+        EventManager.OnDrawCard += _onDrawCardUpdateCount;
         EventManager.OnFly += UpdateAfterFly;
-        EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelAvailableColor);
-        EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelUnavailableColor);
-        EventManager.OnGameStart += () => UpdateAllPanels();
+        EventManager.OnPlayerChooseBroadcast += _onPlayerChooseBroadcastHandler;
+        EventManager.AfterPlayerChooseBroadcast += _onAfterPlayerChooseBroadcastHandler;
+        EventManager.OnGameStart += _onGameStartUpdateAllPanels;
+        EventManager.OnGameOver += _onGameOverHandler;
     }
 
     private void OnDestroy()
@@ -54,9 +78,43 @@ public class UIManager : MonoBehaviour
         EventManager.OnTurnStart -= ShowUseCardButton;
         EventManager.OnTurnStart -= ShowEndTurnButton;
         EventManager.OnTurnStart -= ShowFoldCardButton;
+        EventManager.OnTurnStart -= _onTurnStartUpdateBasePanel;
+        EventManager.OnTurnStart -= _onTurnStartUpdateStrikePanel;
+        EventManager.OnPlayCard -= _onPlayCardUpdateBasePanel;
         EventManager.OnPlayCard -= UpdateItemPanel;
+        EventManager.OnPlayCard -= _onPlayCardHideFoldButton;
         EventManager.OnPlayerEliminate -= ChangePanelColor;
+        EventManager.OnDrawCard -= _onDrawCardUpdateCount;
         EventManager.OnFly -= UpdateAfterFly;
+        EventManager.OnPlayerChooseBroadcast -= _onPlayerChooseBroadcastHandler;
+        EventManager.AfterPlayerChooseBroadcast -= _onAfterPlayerChooseBroadcastHandler;
+        EventManager.OnGameStart -= _onGameStartUpdateAllPanels;
+        EventManager.OnGameOver -= _onGameOverHandler;
+    }
+
+    private void Update()
+    {
+        if (_game == null || GamePopup == null) return;
+
+        if (Input.GetKeyDown(KeyCode.Escape) && _game.state == GameState.Gaming)
+        {
+            if (GamePopup.gameObject.activeSelf)
+                GamePopup.Hide();         // 再按 ESC 关闭弹窗
+            else
+                GamePopup.Show("是否退出游戏");
+        }
+    }
+
+    private void OnGameOver(int winnerId)
+    {
+        if (GamePopup == null) return;
+
+        if (winnerId == -1)
+            GamePopup.Show("无人生还");
+        else if (winnerId == 0)
+            GamePopup.Show("你取得胜利");
+        else
+            GamePopup.Show($"玩家{winnerId}取得胜利");
     }
 
     public void Init()
@@ -136,16 +194,30 @@ public class UIManager : MonoBehaviour
 
     public void UpdateBasePanel(int playerId)
     {
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+
         GameObject targetPanel = PlayerPanels[playerId];
-        PlayerData targetPlayer = _players.GetPlayer(playerId);
+        if (targetPanel == null) return;
+
         Transform baseInfo = targetPanel.transform.Find("Base");
-        baseInfo.Find("energy").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
-        baseInfo.Find("card").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
+        if (baseInfo == null) return;
+
+        PlayerData targetPlayer = _players.GetPlayer(playerId);
+        if (targetPlayer == null) return;
+
+        var energyText = baseInfo.Find("energy");
+        if (energyText != null) energyText.GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
+        var cardText = baseInfo.Find("card");
+        if (cardText != null) cardText.GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
     }
 
     public void UpdateItemPanel(int playerId, Card card)
     {
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+
         GameObject targetPanel = PlayerPanels[playerId];
+        if (targetPanel == null) return;
+
         Transform itemPanel = null;
         switch (card.type)
         {
@@ -159,7 +231,11 @@ public class UIManager : MonoBehaviour
                 UpdateStrikePanel(playerId);
                 return;
         }
+        if (itemPanel == null) return;
+
         ScrollRect scrollRect = itemPanel.GetComponent<ScrollRect>();
+        if (scrollRect == null || scrollRect.content == null) return;
+
         GameObject item = Instantiate(ItemPrefab, scrollRect.content);
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
     }
@@ -196,9 +272,17 @@ public class UIManager : MonoBehaviour
 
     public void UpdateStrikePanel(int playerId)
     {
+        if (_actions == null) return;
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+
         GameObject targetPanel = PlayerPanels[playerId];
+        if (targetPanel == null) return;
+
         Transform strikePanel = targetPanel.transform.Find("Strike_list");
+        if (strikePanel == null) return;
+
         ScrollRect scrollRect = strikePanel.GetComponent<ScrollRect>();
+        if (scrollRect == null || scrollRect.content == null) return;
 
         foreach (Transform child in scrollRect.content)
             Destroy(child.gameObject);
@@ -209,35 +293,47 @@ public class UIManager : MonoBehaviour
             {
                 GameObject item = Instantiate(ItemPrefab, scrollRect.content);
                 item.GetComponent<TextMeshProUGUI>().text = strike.cardName;
-                item.transform.Find("target").GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
-                item.transform.Find("remain").GetComponent<TextMeshProUGUI>().text = (strike.totalDistance - strike.remainSteps).ToString();
+                var targetText = item.transform.Find("target");
+                if (targetText != null) targetText.GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
+                var remainText = item.transform.Find("remain");
+                if (remainText != null) remainText.GetComponent<TextMeshProUGUI>().text = (strike.totalDistance - strike.remainSteps).ToString();
             }
         }
     }
 
     public void ChangePanelColor(int playerId)
     {
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
         PlayerPanels[playerId].GetComponent<Image>().color = Color.red;
     }
 
     public void UpdateCardCount()
     {
-        CardCountText.text = $"{_cards.deck.Count}";
+        if (_cards != null)
+            CardCountText.text = $"{_cards.deck.Count}";
     }
 
     public void UpdateAfterFly(PlayerData player, Galaxy targetGalaxy)
     {
+        if (player == null) return;
         Transform basePanel = PlayerPanels[player.playerId].transform.Find("Base");
-        basePanel.Find("energy").GetComponent<TextMeshProUGUI>().text = "0";
-        basePanel.Find("card").GetComponent<TextMeshProUGUI>().text = "0";
+        if (basePanel == null) return;
+        var energyText = basePanel.Find("energy");
+        if (energyText != null) energyText.GetComponent<TextMeshProUGUI>().text = "0";
+        var cardText = basePanel.Find("card");
+        if (cardText != null) cardText.GetComponent<TextMeshProUGUI>().text = "0";
         if (player.playerId == 0)
             PlayerGalaxyText.text = $"所在星系: {targetGalaxy.id}";
     }
 
     public void ChangePlayerPanelColor(Color color)
     {
+        if (_actions == null) return;
         foreach (var playerId in _actions.BroadcastRes.Keys)
-            PlayerPanels[playerId].GetComponent<Image>().color = color;
+        {
+            if (playerId >= 0 && playerId < PlayerPanels.Count)
+                PlayerPanels[playerId].GetComponent<Image>().color = color;
+        }
     }
 
     public void UpdateAllPanels()

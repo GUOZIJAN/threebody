@@ -12,4 +12,5 @@ public static class EventManager
     public static Action OnGameStart;
     public static Action<TurnPhase> OnPhaseChanged;
     public static Action<int> OnGalaxyStateChanged;  // int = galaxyId
+    public static Action<int> OnGameOver;             // int = winnerId (-1 表示无人生还)
 }

@@ -183,6 +183,8 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        int winnerId = -1;
+
         if (IsNoPlayerWin())
         {
             state = GameState.GameOver;
@@ -191,8 +193,20 @@ public class GameManager : MonoBehaviour
         else if (IsLastPlayerWin())
         {
             state = GameState.GameOver;
-            Debug.Log("单人胜利");
+            // 找到最后存活的玩家
+            for (int i = 0; i < players.Players.Count; i++)
+            {
+                if (players.Players[i].isAlive)
+                {
+                    winnerId = i;
+                    break;
+                }
+            }
+            Debug.Log($"玩家{winnerId}取得胜利");
         }
+
+        if (state == GameState.GameOver)
+            EventManager.OnGameOver?.Invoke(winnerId);
     }
 
     // ==================== 广播结算 ====================
