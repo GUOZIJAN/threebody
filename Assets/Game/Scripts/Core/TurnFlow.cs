@@ -318,12 +318,25 @@ public class TurnFlow : MonoBehaviour
     {
         var pd = _players.GetPlayer(_game.currentPlayerId);
 
-        // 补牌到 4 张
-        while (pd.handCards.Count < 4)
+        if (pd.isAlive)
         {
-            var c = _cards.Draw();
-            pd.handCards.Add(c);
-            EventManager.OnDrawCard?.Invoke(c);
+            // 补牌到 4 张
+            while (pd.handCards.Count < 4)
+            {
+                var c = _cards.Draw();
+                pd.handCards.Add(c);
+                EventManager.OnDrawCard?.Invoke(c);
+            }
+        }
+        else
+        {
+            // 死亡玩家：其发起的打击仍需推进计数，否则 strikeList 永远不空
+            AdvanceStrikesForPlayer(_game.currentPlayerId);
+            if (_game.state == GameState.GameOver)
+            {
+                SetPhase(TurnPhase.GameOver);
+                return;
+            }
         }
         _ui.UpdateBasePanel(_game.currentPlayerId);
 
@@ -585,10 +598,8 @@ public class TurnFlow : MonoBehaviour
 
         _game.CompleteBroadcast(_broadcastCard, firstVal, _broadcastInitiator, responser);
 
-        var c = _cards.Draw();
-        responser.handCards.Add(c);
-        EventManager.OnDrawCard?.Invoke(c);
-
+        // 先移除回应者的视觉手牌，再抽替换牌 —— 顺序很重要：
+        // 否则 SpawnCard 的 guard 会看到 visual 数仍包含旧卡而拒绝生成新卡
         if (responser.playerId == 0 && _game.currentCard != null)
         {
             CardAnimator.Instance.DetachFromHand(_game.currentCard);
@@ -597,6 +608,10 @@ public class TurnFlow : MonoBehaviour
                 _spawn.RepositionHandCards();
             });
         }
+
+        var c = _cards.Draw();
+        responser.handCards.Add(c);
+        EventManager.OnDrawCard?.Invoke(c);
 
         _ui.UpdateBasePanel(responser.playerId);
         _ui.UpdateBasePanel(_broadcastInitiator.playerId);
@@ -649,6 +664,26 @@ public class TurnFlow : MonoBehaviour
         {
             _game.currentPlayerId = (_game.currentPlayerId + 1) % _game.playerCount;
         } while (!_players.Players[_game.currentPlayerId].isAlive);
+    }
+
+    /// <summary>推进指定玩家发起的打击计数（死亡玩家回合被跳过时使用）</summary>
+    private void AdvanceStrikesForPlayer(int playerId)
+    {
+        var strikeList = _actions.strikeList;
+        for (int i = strikeList.Count - 1; i >= 0; i--)
+        {
+            var strike = strikeList[i];
+            if (strike.attackerId == playerId)
+                strike.remainSteps--;
+
+            if (strike.remainSteps == 0)
+            {
+                _game.RunStrike(strike);
+                strikeList.RemoveAt(i);
+            }
+        }
+
+        _game.GameOver();
     }
 
     private void CheckArrivingStrikes()

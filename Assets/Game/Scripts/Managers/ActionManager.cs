@@ -9,6 +9,7 @@ public class ActionManager : MonoBehaviour
 
     private PlayerManager _players;
     private GalaxyManager _galaxies;
+    private SpawnManager _spawn;
 
     private void Awake()
     {
@@ -20,6 +21,7 @@ public class ActionManager : MonoBehaviour
     {
         _players  = Services.Get<PlayerManager>();
         _galaxies = Services.Get<GalaxyManager>();
+        _spawn    = Services.Get<SpawnManager>();
     }
 
     /// <summary>发动打击：创建 StrikeInfo 加入飞行队列</summary>
@@ -60,6 +62,17 @@ public class ActionManager : MonoBehaviour
         galaxy.ownerPlayerId = player.playerId;
         player.energy = 0;
         player.handCards.Clear();
+
+        // 玩家0跃迁时同步清除视觉手牌（数据层已清除，视觉层必须跟进）
+        if (player.playerId == 0 && _spawn != null)
+        {
+            foreach (var cv in _spawn.handCards)
+            {
+                if (cv != null) Destroy(cv.gameObject);
+            }
+            _spawn.handCards.Clear();
+        }
+
         EventManager.OnFly?.Invoke(player, galaxy);
     }
 

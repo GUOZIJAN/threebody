@@ -113,7 +113,10 @@ public class CardAnimator : MonoBehaviour
 
         // Description
         string desc = _spawn.GetCardDescription(card);
-        temp.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = desc;
+        if(card.type != CardType.Broadcast)
+            temp.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = desc;
+        else 
+            temp.transform.Find("DescText").GetComponent<TextMeshProUGUI>().text = "";
 
         // Background sprite
         Sprite bgSprite = Resources.Load<Sprite>("pic/" + card.cardname);

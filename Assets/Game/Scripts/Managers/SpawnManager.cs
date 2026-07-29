@@ -97,7 +97,12 @@ public class SpawnManager : MonoBehaviour
     public void SpawnCard(Card card)
     {
         if (handCards.Count >= handPoints.Count) return;
-        if (_players.GetPlayer(0).handCards.Count <= handCards.Count) return;
+
+        // 只生成玩家0的手牌——必须检查这张卡是否属于玩家0
+        // 旧逻辑用 Count 比较：当 visual > data 时会把 AI 的卡误生成给玩家0
+        var p0 = _players.GetPlayer(0);
+        if (p0 == null || !p0.handCards.Contains(card)) return;
+        if (handCards.Count >= p0.handCards.Count) return;
 
         Transform handPoint = handPoints[handCards.Count];
         GameObject newCard = Instantiate(cardPrefab, deckPos.position, deckPos.rotation);

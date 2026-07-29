@@ -77,12 +77,19 @@ public class GameManager : MonoBehaviour
                 ? Services.Get<UIManager>().GetBuildPanelItems(targetPlayer.playerId)
                 : null;
 
-            // 动画：收集将被弃置的建造手牌（科技锁死）
+            // 动画：收集将被弃置的手牌
             bool discardsBuilds = strike.effect == StrikeEffect.DestroyHand
                                || strike.effect == StrikeEffect.DestroyAll;
             List<GameObject> discardCards = null;
             if (discardsBuilds && targetPlayer.playerId == 0)
-                discardCards = CardAnimator.Instance.FindHandCardsOfType<BuildCard>();
+            {
+                discardCards = strike.effect == StrikeEffect.DestroyAll
+                    ? Services.Get<SpawnManager>().handCards.ConvertAll(cv => cv != null ? cv.gameObject : null)
+                    : CardAnimator.Instance.FindHandCardsOfType<BuildCard>();
+                // 过滤掉 null 引用
+                if (strike.effect == StrikeEffect.DestroyAll)
+                    discardCards.RemoveAll(go => go == null);
+            }
 
             if (ApplyStrikeToPlayer(strike, targetPlayer))
             {
@@ -173,7 +180,26 @@ public class GameManager : MonoBehaviour
 
     private bool IsLastPlayerWin()
     {
-        return remainPlayers == 1 && actions.strikeList.Count == 0;
+        if (remainPlayers != 1) return false;
+
+        // 找到最后存活的玩家
+        PlayerData lastPlayer = null;
+        foreach (var p in players.Players)
+        {
+            if (p.isAlive) { lastPlayer = p; break; }
+        }
+        if (lastPlayer == null) return false;
+
+        // 只有不再有打击指向该玩家时，才算胜利
+        // （该玩家自己发出的打击可以忽略，因为已经没有其他对手了）
+        foreach (var strike in actions.strikeList)
+        {
+            Galaxy targetGalaxy = galaxys.GetGalaxy(strike.targetGalaxyId);
+            if (targetGalaxy.ownerPlayerId == lastPlayer.playerId)
+                return false;
+        }
+
+        return true;
     }
 
     private bool IsNoPlayerWin()
