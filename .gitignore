@@ -8,6 +8,8 @@
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
 /[Uu]ser[Ss]ettings/
+/[Dd]emo
+/ARCHITECTURE.md
 
 # 必须保留Assets里的.meta文件（注意顺序：先不忽略.meta，再排除Assets外的.meta）
 !*.meta

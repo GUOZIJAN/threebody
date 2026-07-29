@@ -481,10 +481,11 @@ public class TurnFlow : MonoBehaviour
         // 如果 AI 是广播发起者，且人类存活 → 先播动画，再弹窗
         if (player.playerId != 0 && _players.GetPlayer(0).isAlive)
         {
+            // 必须在动画之前设 phase，防止 ProcessAIStep 在动画期间继续推进回合
+            SetPhase(TurnPhase.WaitingBroadcastRespond);
             _broadcastAnimPlayed = true;
             CardAnimator.Instance.AnimateAIUse(card, player.playerId, onComplete: () =>
             {
-                SetPhase(TurnPhase.WaitingBroadcastRespond);
                 ShowBroadcastPopup(player, targetGalaxy, card, forceHumanRespond);
             });
             return;
