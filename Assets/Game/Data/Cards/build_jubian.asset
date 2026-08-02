@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d632d8eae15e37947b9a8802450ff1b3, type: 3}
+  m_Name: build_jubian
+  m_EditorClassIdentifier: 
+  cardId: build_jubian
+  cardName: "\u805A\u53D8\u53CD\u5E94\u5806"
+  description: "\u6BCF\u56DE\u5408\u5F00\u59CB\u65F6,\u80FD\u91CF+1\uFF0C\u4E0D\u4F9D\u8D56\u6052\u661F"
+  cardSprite: {fileID: 0}
+  cardType: 2
+  cost: 3
+  countInDeck: 4
+  broadcastChoice: 0
+  broadcastDistance: 0
+  damage: 0
+  strikeEffect: 0
+  defense: 0
+  produce: 1
+  needSun: 0
+  buildEffect: 0

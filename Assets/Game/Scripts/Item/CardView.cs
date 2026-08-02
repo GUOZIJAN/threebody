@@ -1,6 +1,5 @@
 using UnityEngine;
 using DG.Tweening;
-using Unity.VisualScripting;
 using UnityEngine.EventSystems;
 
 public class CardView : MonoBehaviour, IPointerClickHandler
@@ -9,20 +8,30 @@ public class CardView : MonoBehaviour, IPointerClickHandler
 
     private RectTransform _rect;
 
+    private GameManager _game;
+    private Player _player;
+    private TurnFlow _turnFlow;
+
     [Header("动画参数")]
-    public float moveDuration = 0.6f;     // 移动时长
-    public float arcHeight = 150f;        // 弧线高度
-    public float scaleStart = 0.7f;       // 出生初始缩放
-    public float scaleEnd = 0.7f;           // 最终缩放
-    public float selectUpOffset = 20f;    // 选中时向上移动的距离
+    public float moveDuration = 0.6f;
+    public float arcHeight = 150f;
+    public float scaleStart = 0.7f;
+    public float scaleEnd = 0.7f;
+    public float selectUpOffset = 20f;
 
     private void Awake()
     {
         _rect = GetComponent<RectTransform>();
     }
 
+    private void Start()
+    {
+        _game     = Services.Get<GameManager>();
+        _turnFlow = Services.Get<TurnFlow>();
+        _player   = Services.Get<Player>();
+    }
 
-    // 从牌堆起点 弧线飞到手牌终点
+    /// <summary>弧线飞到手牌位置</summary>
     public void FlyToHand(Vector2 startPos, Vector2 endPos)
     {
         _rect.anchoredPosition = startPos;
@@ -34,7 +43,6 @@ public class CardView : MonoBehaviour, IPointerClickHandler
             0
         );
 
-        // 路径必须是 Vector3[]
         Vector3[] path = { startPos, midPos, endPos };
 
         _rect.DOPath(path, moveDuration, PathType.CatmullRom)
@@ -47,39 +55,37 @@ public class CardView : MonoBehaviour, IPointerClickHandler
         _rect.DOScale(scaleEnd, moveDuration).SetEase(Ease.OutBack);
     }
 
-    //卡牌点击会向上移动并变为选中状态
     public void OnPointerClick(PointerEventData eventData)
     {
-        GameObject other = GameManager.Instance.currentCard;
-        if(other != gameObject)
+        // 弃牌模式：切换选中状态
+        if (_turnFlow.Phase == TurnPhase.FoldingCards)
         {
-            //可单选或多选
-            if(other != null && ChoiceManager.Instance.isFoldingCards == false)
-            {
-                other.GetComponent<CardView>().MoveCardDown();
-            }
-            _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
-            GameManager.Instance.currentCard = gameObject;
-            Player.Instance.currentCard = gameObject.GetComponent<CardView>().card;   //将当前选中的卡牌赋值给Player的currentCard，供响应广播卡时使用
-            
-            if(ChoiceManager.Instance.isFoldingCards == true)
-            {
-                ChoiceManager.Instance.foldedCards.Add(gameObject);
-            }
+            _turnFlow.ToggleFoldCard(gameObject);
+            return;
         }
 
-        //如果点击同一张牌，则取消选中
+        // 普通选中/取消选中
+        GameObject other = _game.currentCard;
+        if (other != gameObject)
+        {
+            if (other != null)
+                other.GetComponent<CardView>().MoveCardDown();
+
+            MoveCardUp();
+            _game.currentCard = gameObject;
+            _player.currentCard = card;
+        }
         else
         {
             MoveCardDown();
-            GameManager.Instance.currentCard = null;
-            Player.Instance.currentCard = null;
-
-            if(ChoiceManager.Instance.isFoldingCards == true)
-            {
-                ChoiceManager.Instance.foldedCards.Remove(gameObject);
-            }
+            _game.currentCard = null;
+            _player.currentCard = null;
         }
+    }
+
+    public void MoveCardUp()
+    {
+        _rect.DOAnchorPosY(_rect.anchoredPosition.y + selectUpOffset, 0.2f);
     }
 
     public void MoveCardDown()

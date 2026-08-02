@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using UnityEngine;
 
 public class AI : MonoBehaviour
@@ -6,83 +5,95 @@ public class AI : MonoBehaviour
     public PlayerData data;
     public int id;
 
+    private PlayerManager _players;
+    private GalaxyManager _galaxies;
+    private ActionManager _actions;
+
+    private void Start()
+    {
+        _players  = Services.Get<PlayerManager>();
+        _galaxies = Services.Get<GalaxyManager>();
+        _actions  = Services.Get<ActionManager>();
+    }
+
     public void Init()
     {
-        data = PlayerManager.Instance.GetPlayer(id); // 默认玩家ID为0 
-
+        data = _players.GetPlayer(id);
         Debug.Log($"ai{id}初始化完成");
     }
 
+    /// <summary>回合开始，重置（当前无状态，保留供未来扩展）</summary>
+    public void BeginTurn() { }
+
+    // ==================== 目标选择 ====================
+
+    /// <summary>广播：选距离内最远的星系</summary>
+    public Galaxy FindBestBroadcastTarget(BroadcastCard card)
+    {
+        Galaxy best = null;
+        int maxDist = -1;
+        foreach (var galaxy in _galaxies.galaxyList)
+        {
+            int d = _galaxies.GetDistance(data.galaxyId, galaxy.id);
+            if (d <= card.distance && d > maxDist)
+            {
+                maxDist = d;
+                best = galaxy;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>打击：随机选一个星系</summary>
+    public Galaxy PickRandomGalaxy()
+    {
+        return _galaxies.galaxyList[Random.Range(0, _galaxies.galaxyList.Count)];
+    }
+
+    /// <summary>跃迁：选一个空的可居住星系</summary>
+    public Galaxy FindEmptyGalaxy()
+    {
+        foreach (var g in _galaxies.galaxyList)
+        {
+            if (g.isAlive && g.ownerPlayerId == -1)
+                return g;
+        }
+        return null;
+    }
+
+    // ==================== 广播回应 ====================
+
+    /// <summary>决定是否回应他人的广播（同步）</summary>
     public BroadcastCard Respond(PlayerData raiser, Galaxy galaxy, BroadcastCard card)
     {
-        // 简单的AI逻辑：遍历所有手牌，如果有可用的广播卡，则响应
+        // 监听基地：所在星系被广播时可选择不回应
+        if (galaxy.ownerPlayerId == data.playerId && HasNoReplyBuilding())
+        {
+            Debug.Log($"AI玩家{data.playerId}拥有监听基地，拒绝回应玩家{raiser.playerId}的广播");
+            return null;
+        }
+
         foreach (var handCard in data.handCards)
         {
-            if (handCard.type == CardType.Broadcast && GalaxyManager.Instance.GetDistance(data.galaxyId, galaxy.id) <= ((BroadcastCard)handCard).distance)
+            if (handCard is BroadcastCard handBroadcast
+                && _galaxies.GetDistance(data.galaxyId, galaxy.id) <= handBroadcast.distance
+                && data.energy >= handBroadcast.cost)
             {
-                if(data.energy >= handCard.cost)
-                {
-                    Debug.Log($"AI玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
-                    return (BroadcastCard)handCard;
-                }
+                Debug.Log($"AI玩家{data.playerId}响应了玩家{raiser.playerId}的广播卡{card.cardname}");
+                return handBroadcast;
             }
         }
         Debug.Log($"AI玩家{data.playerId}没有响应玩家{raiser.playerId}的广播卡{card.cardname}");
         return null;
     }
 
-    public async Task TurnStart()
+    private bool HasNoReplyBuilding()
     {
-        // AI的回合开始时可以执行一些自动操作
-        //遍历手牌，碰到可用牌就使用，星系选择随机，但尽可能远离当前所在星系
-        for(int i = data.handCards.Count - 1; i >= 0; i--)
+        foreach (var build in data.buildCards)
         {
-            var handCard = data.handCards[i];
-            if(data.energy >= handCard.cost)
-            {
-                if(handCard.type == CardType.Broadcast)
-                {
-                    BroadcastCard card = (BroadcastCard)handCard;
-                    Galaxy targetGalaxy = null;
-                    int maxDistance = -1;
-                    foreach(var galaxy in GalaxyManager.Instance.galaxyList)
-                    {
-                        int distance = GalaxyManager.Instance.GetDistance(data.galaxyId, galaxy.id);
-                        if(distance <= card.distance && distance > maxDistance)
-                        {
-                            maxDistance = distance;
-                            targetGalaxy = galaxy;
-                        }
-                    }
-                    ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
-                    if(targetGalaxy != null)
-                    {
-                        await ActionManager.Instance.UseCard(data.playerId, card);
-                    }
-                }
-
-                else if (handCard.type == CardType.Strike)
-                {
-                    StrikeCard card = (StrikeCard)handCard;
-                    int GalaxyId = Random.Range(1,10); // 随机选择一个星系作为打击目标
-                    Galaxy targetGalaxy = GalaxyManager.Instance.GetGalaxy(GalaxyId);
-                    ChoiceManager.Instance.AISelectedGalaxy = targetGalaxy;
-
-                    await ActionManager.Instance.UseCard(data.playerId, card);
-                }
-
-                else if (handCard.type == CardType.Build)
-                {
-                    BuildCard card = (BuildCard)handCard;
-                    await ActionManager.Instance.UseCard(data.playerId, card);
-                    if(card.effect == BuildEffect.Fly)
-                    {
-                        break; // 飞行器建造成功后不继续使用牌了
-                    }
-                }
-                
-                await Task.Delay(1000); // 每使用一张牌后等待1秒，模拟思考时间
-            }
+            if (build.effect == BuildEffect.NoReply)
+                return true;
         }
+        return false;
     }
 }

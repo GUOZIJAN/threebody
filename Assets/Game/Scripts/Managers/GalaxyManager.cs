@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Data.Common;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 public class GalaxyManager : MonoBehaviour
 {
@@ -12,6 +10,7 @@ public class GalaxyManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
     }
 
     public Galaxy GetGalaxy(int id)

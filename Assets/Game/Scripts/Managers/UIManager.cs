@@ -1,6 +1,5 @@
-using System.Threading.Tasks;
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
@@ -14,247 +13,332 @@ public class UIManager : MonoBehaviour
     public GameObject ConfirmFoldButton;
     public GameObject ItemPrefab;
     public TextMeshProUGUI CardCountText;
-    public TextMeshProUGUI PlayerGalaxyText;   // 显示玩家所在星系的文本组件
-    public List<GameObject> PlayerPanels;   // 玩家面板列表，包含玩家信息和手牌展示等UI元素
+    public TextMeshProUGUI PlayerGalaxyText;
+    public List<GameObject> PlayerPanels;
+    public GamePopup GamePopup;
 
-    private GameManager gameManager;
-    private Color PanelAvailableColor = new Color32(95,255,0,100);
-    private Color PanelUnavailableColor = new Color32(255,255,255,100);
+    // 缓存的依赖
+    private TurnFlow _turnFlow;
+    private GameManager _game;
+    private PlayerManager _players;
+    private ActionManager _actions;
+    private Player _player;
+    private SpawnManager _spawn;
+    private CardManager _cards;
+
+    private Color PanelAvailableColor   = new Color32(95, 255, 0, 100);
+    private Color PanelUnavailableColor = new Color32(255, 255, 255, 100);
+
+    // ==================== 存储 lambda 委托，确保 OnDestroy 能正确取消订阅 ====================
+    private System.Action _onTurnStartUpdateBasePanel;
+    private System.Action _onTurnStartUpdateStrikePanel;
+    private System.Action<int, Card> _onPlayCardUpdateBasePanel;
+    private System.Action<int, Card> _onPlayCardHideFoldButton;
+    private System.Action<Card> _onDrawCardUpdateCount;
+    private System.Action _onPlayerChooseBroadcastHandler;
+    private System.Action _onAfterPlayerChooseBroadcastHandler;
+    private System.Action _onGameStartUpdateAllPanels;
+    private System.Action<int> _onGameOverHandler;
 
     private void Awake()
     {
         Instance = this;
+        Services.Register(this);
+
+        // 创建并存储所有委托（避免匿名 lambda 无法在 OnDestroy 中取消订阅）
+        _onTurnStartUpdateBasePanel       = () => UpdateBasePanel(_game.currentPlayerId);
+        _onTurnStartUpdateStrikePanel     = () => UpdateStrikePanel(_game.currentPlayerId);
+        _onPlayCardUpdateBasePanel        = (id, _) => UpdateBasePanel(id);
+        _onPlayCardHideFoldButton         = (_, _) => FoldCardButton.SetActive(false);
+        _onDrawCardUpdateCount            = _ => UpdateCardCount();
+        _onPlayerChooseBroadcastHandler   = () => ChangePlayerPanelColor(PanelAvailableColor);
+        _onAfterPlayerChooseBroadcastHandler = () => ChangePlayerPanelColor(PanelUnavailableColor);
+        _onGameStartUpdateAllPanels       = () => UpdateAllPanels();
+        _onGameOverHandler                = OnGameOver;
+
         EventManager.OnTurnStart += ShowUseCardButton;
         EventManager.OnTurnStart += ShowEndTurnButton;
         EventManager.OnTurnStart += ShowFoldCardButton;
-        EventManager.OnTurnStart += () => UpdateBasePanel(gameManager.currentPlayerId);
-        EventManager.OnTurnStart += () => UpdateStrikePanel(gameManager.currentPlayerId);
-        EventManager.OnPlayCard += UpdateBasePanel;
+        EventManager.OnTurnStart += _onTurnStartUpdateBasePanel;
+        EventManager.OnTurnStart += _onTurnStartUpdateStrikePanel;
+        EventManager.OnPlayCard += _onPlayCardUpdateBasePanel;
         EventManager.OnPlayCard += UpdateItemPanel;
-        EventManager.OnPlayCard += (id,card) => FoldCardButton.SetActive(false);
+        EventManager.OnPlayCard += _onPlayCardHideFoldButton;
         EventManager.OnPlayerEliminate += ChangePanelColor;
-        EventManager.OnDrawCard += (card) => UpdateCardCount();
+        EventManager.OnDrawCard += _onDrawCardUpdateCount;
         EventManager.OnFly += UpdateAfterFly;
-        EventManager.OnPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelAvailableColor);
-        EventManager.AfterPlayerChooseBroadcast += () => ChangePlayerPanelColor(PanelUnavailableColor);
-        EventManager.OnGameStart += () => UpdateAllPanels();
+        EventManager.OnPlayerChooseBroadcast += _onPlayerChooseBroadcastHandler;
+        EventManager.AfterPlayerChooseBroadcast += _onAfterPlayerChooseBroadcastHandler;
+        EventManager.OnGameStart += _onGameStartUpdateAllPanels;
+        EventManager.OnGameOver += _onGameOverHandler;
+    }
+
+    private void OnDestroy()
+    {
+        EventManager.OnTurnStart -= ShowUseCardButton;
+        EventManager.OnTurnStart -= ShowEndTurnButton;
+        EventManager.OnTurnStart -= ShowFoldCardButton;
+        EventManager.OnTurnStart -= _onTurnStartUpdateBasePanel;
+        EventManager.OnTurnStart -= _onTurnStartUpdateStrikePanel;
+        EventManager.OnPlayCard -= _onPlayCardUpdateBasePanel;
+        EventManager.OnPlayCard -= UpdateItemPanel;
+        EventManager.OnPlayCard -= _onPlayCardHideFoldButton;
+        EventManager.OnPlayerEliminate -= ChangePanelColor;
+        EventManager.OnDrawCard -= _onDrawCardUpdateCount;
+        EventManager.OnFly -= UpdateAfterFly;
+        EventManager.OnPlayerChooseBroadcast -= _onPlayerChooseBroadcastHandler;
+        EventManager.AfterPlayerChooseBroadcast -= _onAfterPlayerChooseBroadcastHandler;
+        EventManager.OnGameStart -= _onGameStartUpdateAllPanels;
+        EventManager.OnGameOver -= _onGameOverHandler;
+    }
+
+    private void Update()
+    {
+        if (_game == null || GamePopup == null) return;
+
+        if (Input.GetKeyDown(KeyCode.Escape) && _game.state == GameState.Gaming)
+        {
+            if (GamePopup.gameObject.activeSelf)
+                GamePopup.Hide();         // 再按 ESC 关闭弹窗
+            else
+                GamePopup.Show("是否退出游戏");
+        }
+    }
+
+    private void OnGameOver(int winnerId)
+    {
+        if (GamePopup == null) return;
+
+        if (winnerId == -1)
+            GamePopup.Show("无人生还");
+        else if (winnerId == 0)
+            GamePopup.Show("你取得胜利");
+        else
+            GamePopup.Show($"玩家{winnerId}取得胜利");
     }
 
     public void Init()
     {
-        gameManager = GameManager.Instance;
-        PlayerGalaxyText.text = $"所在星系: {PlayerManager.Instance.GetPlayer(0).galaxyId}";
+        _turnFlow = Services.Get<TurnFlow>();
+        _game     = Services.Get<GameManager>();
+        _players  = Services.Get<PlayerManager>();
+        _actions  = Services.Get<ActionManager>();
+        _player   = Services.Get<Player>();
+        _spawn    = Services.Get<SpawnManager>();
+        _cards    = Services.Get<CardManager>();
+
+        PlayerGalaxyText.text = $"所在星系: {_players.GetPlayer(0).galaxyId}";
     }
 
-    public void ShowUseCardButton()
-    {
-        if(gameManager.currentPlayerId == 0)
-        {
-            UseCardButton.SetActive(true);
-            Debug.Log("显示使用卡牌按钮");
-        }
-        else
-        {
-            UseCardButton.SetActive(false);
-            Debug.Log("隐藏使用卡牌按钮");
-        }
-    }
+    // ==================== 按钮回调 → TurnFlow ====================
 
-    public void ShowEndTurnButton()
+    public void OnUseCardButtonClicked()
     {
-        if(gameManager.currentPlayerId == 0)
-        {
-            EndTurnButton.SetActive(true);
-            Debug.Log("显示结束回合按钮");
-        }
-        else
-        {
-            EndTurnButton.SetActive(false);
-            Debug.Log("隐藏结束回合按钮");
-        }
-    }
-
-    public void ShowFoldCardButton()
-    {
-        if(gameManager.currentPlayerId == 0)
-        {
-            FoldCardButton.SetActive(true);
-            Debug.Log("显示弃牌按钮");
-        }
-        else
-        {
-            FoldCardButton.SetActive(false);
-            Debug.Log("隐藏弃牌按钮");
-        }
-    }
-
-    public async void OnUseCardButtonClicked()
-    {
-        if(gameManager.currentCard == null)
-        {
-            Debug.Log("没有选中卡牌！");
-            return;
-        }
-        await ActionManager.Instance.UseCard(gameManager.currentPlayerId, gameManager.currentCard.GetComponent<CardView>().card);
-        gameManager.currentCard = null;     //使用完卡牌后,清空'当前卡牌'
-        Player.Instance.currentCard = null;    //同样清空Player的currentCard，不放在gamemanager，只有玩家使用这个变量
+        _turnFlow.OnPlayCardClicked();
     }
 
     public void OnEndTurnButtonClicked()
     {
-        Debug.Log("结束回合按钮被点击了！");
-        ChoiceManager.Instance.OnPlayerTurnEnd();
+        _turnFlow.OnEndTurnClicked();
     }
 
-    public async void OnGameStartButtonClicked()
+    public void OnGameStartButtonClicked()
     {
         GameStartButton.SetActive(false);
-        GameManager.Instance.GameStart();
-        await GameManager.Instance.GameCircle();
+        _game.GameStart();
     }
 
-    public async void OnFoldCardButtonClicked()
+    public void OnFoldCardButtonClicked()
+    {
+        _turnFlow.OnFoldCardsClicked();
+    }
+
+    public void OnConfirmFoldButtonClicked()
+    {
+        _turnFlow.OnFoldConfirmed();
+    }
+
+    // ==================== 弃牌 UI 状态 ====================
+
+    public void EnterFoldMode()
     {
         UseCardButton.SetActive(false);
         EndTurnButton.SetActive(false);
         FoldCardButton.SetActive(false);
         ConfirmFoldButton.SetActive(true);
-
-        if(gameManager.currentCard != null)
-        {
-            gameManager.currentCard.GetComponent<CardView>().MoveCardDown();
-            gameManager.currentCard = null;     //弃牌时,清空'当前卡牌'
-            Player.Instance.currentCard = null;    //同样清空Player的currentCard
-        }
-
-        List<GameObject> foldedCards = await ChoiceManager.Instance.FoldCards();
-        
-        foreach (GameObject card in foldedCards)
-        {
-            // 处理弃掉的卡牌
-            PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Remove(card.GetComponent<CardView>().card);
-            SpawnManager.Instance.RemoveCardFromHand(card);
-            CardManager.Instance.discard.Add(card.GetComponent<CardView>().card);
-            Debug.Log($"玩家{gameManager.currentPlayerId}弃掉了一张牌，当前手牌数量：{PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards.Count}");
-            foreach( Card c in PlayerManager.Instance.GetPlayer(gameManager.currentPlayerId).handCards)
-            {
-                Debug.Log($"玩家{gameManager.currentPlayerId}的手牌中还有：{c.cardname}");
-            }
-        }
-
-        UpdateBasePanel(gameManager.currentPlayerId); // 更新玩家面板显示
-        ConfirmFoldButton.SetActive(false);
-        ChoiceManager.Instance.OnPlayerTurnEnd(); // 弃牌后直接结束回合
     }
 
-    public void OnConfirmFoldButtonClicked()
+    public void ExitFoldMode()
     {
-        ChoiceManager.Instance.OnCardsFolded();
+        ConfirmFoldButton.SetActive(false);
     }
+
+    // ==================== 按钮显隐 ====================
+
+    public void ShowUseCardButton()
+    {
+        UseCardButton.SetActive(_game.currentPlayerId == 0);
+    }
+
+    public void ShowEndTurnButton()
+    {
+        EndTurnButton.SetActive(_game.currentPlayerId == 0);
+    }
+
+    public void ShowFoldCardButton()
+    {
+        FoldCardButton.SetActive(_game.currentPlayerId == 0);
+    }
+
+    // ==================== 面板更新 ====================
 
     public void UpdateBasePanel(int playerId)
     {
-        // 根据playerId更新对应的玩家面板UI
-        // 例如，更新玩家的能量、手牌等信息
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+
         GameObject targetPanel = PlayerPanels[playerId];
-        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        if (targetPanel == null) return;
+
         Transform baseInfo = targetPanel.transform.Find("Base");
-        // 更新能量显示
-        baseInfo.Find("energy").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
-        // 更新手牌数量显示
-        baseInfo.Find("card").GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
+        if (baseInfo == null) return;
+
+        PlayerData targetPlayer = _players.GetPlayer(playerId);
+        if (targetPlayer == null) return;
+
+        var energyText = baseInfo.Find("energy");
+        if (energyText != null) energyText.GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.energy}";
+        var cardText = baseInfo.Find("card");
+        if (cardText != null) cardText.GetComponent<TextMeshProUGUI>().text = $"{targetPlayer.handCards.Count}";
     }
 
-    // Overload to match delegates with Card parameter (e.g., Action<int, Card>)
-    public void UpdateBasePanel(int playerId, Card card)
+    public void UpdateItemPanel(int playerId, Card card)
     {
-        UpdateBasePanel(playerId);
-    }
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
 
-    public void UpdateItemPanel(int playerId,Card card)
-    {
         GameObject targetPanel = PlayerPanels[playerId];
-        PlayerData targetPlayer = PlayerManager.Instance.GetPlayer(playerId);
+        if (targetPanel == null) return;
+
         Transform itemPanel = null;
-        //不同类型卡牌改动不同信息
         switch (card.type)
         {
-            case CardType.Broadcast :
+            case CardType.Broadcast:
                 itemPanel = targetPanel.transform.Find("Broadcast_list");
                 break;
-
-            case CardType.Build :
+            case CardType.Build:
                 itemPanel = targetPanel.transform.Find("Build_list");
                 break;
-
-            case CardType.Strike :
+            case CardType.Strike:
                 UpdateStrikePanel(playerId);
                 return;
         }
+        if (itemPanel == null) return;
+
         ScrollRect scrollRect = itemPanel.GetComponent<ScrollRect>();
+        if (scrollRect == null || scrollRect.content == null) return;
+
         GameObject item = Instantiate(ItemPrefab, scrollRect.content);
         item.GetComponent<TextMeshProUGUI>().text = $"{card.cost}  {card.cardname}";
     }
 
+    /// <summary>获取玩家面板的世界坐标（供 CardAnimator 使用）</summary>
+    public Vector3 GetPlayerPanelPosition(int playerId)
+    {
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return Vector3.zero;
+        return PlayerPanels[playerId].transform.position;
+    }
+
+    /// <summary>获取玩家建筑列表中的所有 GameObject</summary>
+    public List<GameObject> GetBuildPanelItems(int playerId)
+    {
+        var items = new List<GameObject>();
+        Transform buildPanel = PlayerPanels[playerId].transform.Find("Build_list");
+        if (buildPanel == null) return items;
+
+        ScrollRect scrollRect = buildPanel.GetComponent<ScrollRect>();
+        foreach (Transform child in scrollRect.content)
+            items.Add(child.gameObject);
+        return items;
+    }
+
+    /// <summary>清除建筑面板（不带动画）</summary>
+    public void ClearBuildPanel(int playerId)
+    {
+        Transform buildPanel = PlayerPanels[playerId].transform.Find("Build_list");
+        if (buildPanel == null) return;
+        ScrollRect scrollRect = buildPanel.GetComponent<ScrollRect>();
+        foreach (Transform child in scrollRect.content)
+            Destroy(child.gameObject);
+    }
+
     public void UpdateStrikePanel(int playerId)
     {
-        //先清空面板，在根据strikelist重新生成
+        if (_actions == null) return;
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+
         GameObject targetPanel = PlayerPanels[playerId];
+        if (targetPanel == null) return;
+
         Transform strikePanel = targetPanel.transform.Find("Strike_list");
+        if (strikePanel == null) return;
+
         ScrollRect scrollRect = strikePanel.GetComponent<ScrollRect>();
+        if (scrollRect == null || scrollRect.content == null) return;
 
         foreach (Transform child in scrollRect.content)
-        {
             Destroy(child.gameObject);
-        }
-        
-        foreach (var strike in ActionManager.Instance.strikeList)
+
+        foreach (var strike in _actions.strikeList)
         {
             if (strike.attackerId == playerId)
             {
                 GameObject item = Instantiate(ItemPrefab, scrollRect.content);
                 item.GetComponent<TextMeshProUGUI>().text = strike.cardName;
-                item.transform.Find("target").GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
-                item.transform.Find("remain").GetComponent<TextMeshProUGUI>().text = (strike.totalDistance - strike.remainSteps).ToString();
+                var targetText = item.transform.Find("target");
+                if (targetText != null) targetText.GetComponent<TextMeshProUGUI>().text = strike.targetGalaxyId.ToString();
+                var remainText = item.transform.Find("remain");
+                if (remainText != null) remainText.GetComponent<TextMeshProUGUI>().text = (strike.totalDistance - strike.remainSteps).ToString();
             }
         }
     }
 
     public void ChangePanelColor(int playerId)
     {
-        PlayerPanels[playerId].GetComponent<Image>().color = Color.red; // 设置为红色
+        if (playerId < 0 || playerId >= PlayerPanels.Count) return;
+        PlayerPanels[playerId].GetComponent<Image>().color = Color.red;
     }
 
     public void UpdateCardCount()
     {
-        CardCountText.text = $"{CardManager.Instance.deck.Count}"; // 更新牌堆剩余卡牌数量
+        if (_cards != null)
+            CardCountText.text = $"{_cards.deck.Count}";
     }
 
-    public void UpdateAfterFly(PlayerData player,Galaxy targetGalaxy)
+    public void UpdateAfterFly(PlayerData player, Galaxy targetGalaxy)
     {
-        Transform playerBasePanel = PlayerPanels[player.playerId].transform.Find("Base");
-        playerBasePanel.Find("energy").GetComponent<TextMeshProUGUI>().text = "0";
-        playerBasePanel.Find("card").GetComponent<TextMeshProUGUI>().text = "0";
-        if(player.playerId == 0)
-        {
-            PlayerGalaxyText.text = $"所在星系: {targetGalaxy.id}";   //玩家需额外更新星系
-        }
+        if (player == null) return;
+        Transform basePanel = PlayerPanels[player.playerId].transform.Find("Base");
+        if (basePanel == null) return;
+        var energyText = basePanel.Find("energy");
+        if (energyText != null) energyText.GetComponent<TextMeshProUGUI>().text = "0";
+        var cardText = basePanel.Find("card");
+        if (cardText != null) cardText.GetComponent<TextMeshProUGUI>().text = "0";
+        if (player.playerId == 0)
+            PlayerGalaxyText.text = $"所在星系: {targetGalaxy.id}";
     }
 
     public void ChangePlayerPanelColor(Color color)
     {
-        Dictionary<int, BroadcastCard> BroadcastRes = ActionManager.Instance.BroadcastRes;
-        foreach(var playerId in BroadcastRes.Keys)
+        if (_actions == null) return;
+        foreach (var playerId in _actions.BroadcastRes.Keys)
         {
-            PlayerPanels[playerId].GetComponent<Image>().color = color;
+            if (playerId >= 0 && playerId < PlayerPanels.Count)
+                PlayerPanels[playerId].GetComponent<Image>().color = color;
         }
     }
 
     public void UpdateAllPanels()
     {
-        for(int i = 0; i < PlayerPanels.Count; i++)
-        {
+        for (int i = 0; i < PlayerPanels.Count; i++)
             UpdateBasePanel(i);
-        }
     }
 }

@@ -1,6 +1,3 @@
-using System;
-using Unity.VisualScripting;
-
 public class Card
 {
     public CardType type;

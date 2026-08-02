@@ -1,11 +1,19 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-class PlayerPannelOnClick : MonoBehaviour, IPointerClickHandler
+public class PlayerPannelOnClick : MonoBehaviour, IPointerClickHandler
 {
     public int id;
+
+    private TurnFlow _turnFlow;
+
+    private void Start()
+    {
+        _turnFlow = Services.Get<TurnFlow>();
+    }
+
     public void OnPointerClick(PointerEventData eventData)
     {
-        ChoiceManager.Instance.OnPlayerChoose(id);
+        _turnFlow.OnResponderChosen(id);
     }
 }
